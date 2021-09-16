@@ -1,0 +1,12 @@
+# produced files
+**/target
+**/Cargo.lock
+
+# CLion files
+**/.idea
+
+# Visual Studio files
+**/.vscode
+
+# Mac finder files and hidden folders
+**/.DS_Store
