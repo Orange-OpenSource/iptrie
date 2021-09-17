@@ -90,7 +90,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
                 return bb.child[0].into();
             }
             if bb.child[1].is_leaf() && bb.child[1] != bb.escape {
-                return bb.child[0].into();
+                return bb.child[1].into();
             }
             if bb.child[0].is_branching() {
                 b = bb.child[0].into();
