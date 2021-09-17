@@ -11,6 +11,12 @@ fn main() {
         "1.1.0.0/20",
         "1.2.1.0/24",
         "2.1.1.0/24",
+        "1.2.1.0/24",
+        "2.3.1.0/20",
+        "1.3.1.0/20",
+        "2.3.1.0/20",
+        "1.4.1.0/20",
+        "2.5.1.0/20",
     ];
     let mut trie = IpPrefixMap::with_root(20);
 
@@ -27,6 +33,10 @@ fn main() {
         "1.1.3.3".parse::<Ipv4Addr>().unwrap(),
         "1.2.2.2".parse::<Ipv4Addr>().unwrap(),
         "1.2.1.2".parse::<Ipv4Addr>().unwrap(),
+        "1.3.2.2".parse::<Ipv4Addr>().unwrap(),
+        "1.3.1.2".parse::<Ipv4Addr>().unwrap(),
+        "1.4.2.2".parse::<Ipv4Addr>().unwrap(),
+        "1.5.1.2".parse::<Ipv4Addr>().unwrap(),
     ];
     addr.iter()
         .for_each(|a| {
@@ -45,21 +55,4 @@ fn main() {
         });
 
     trie.open_dot_view().expect("can’t open dot view");
-
-    /*
-        let mut trie  = www.iter()
-            .map(|s| FQDN::from_str_without_trailing_dot(s))
-            .collect::<Result<FqdnTrieSet<_>,_>>()
-            .unwrap();
-
-        //trie.open_dot_view().expect("can’t open dot view");
-
-        www.iter()
-            .step_by(2)
-            .map(|s| FQDN::from_str_without_trailing_dot(s).unwrap())
-            .for_each(|s| {trie.remove(&s);});
-
-        //trie.open_dot_view().expect("can’t open dot view");
-    */
-
 }

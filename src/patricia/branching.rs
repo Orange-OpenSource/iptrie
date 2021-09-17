@@ -230,16 +230,17 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
     pub(crate) fn compression_level(&self, b: &Branching<T,B>, comp: u8 ) -> u8
     {
         match (1..=15).into_iter()
-            .try_fold((0u8,0), |(compression_level, compressed_children), j| {
-                let cc = self.count_descendants(b, b.bit >> j, b.escape);
-                if cc < (1<<j)/(1<<comp) {
-                    Err(compression_level) // on ne trouvera pas mieux...
-                } else if (cc > compressed_children) {
-                    Ok((j, cc))
-                } else {
-                    Ok((compression_level, compressed_children))
-                }
-            })
+            .try_fold((0u8,0),
+                      |(compression_level, compressed_children), j| {
+                          let cc = self.count_descendants(b, b.bit >> j, b.escape);
+                          if cc < (1<<j)/(1<<comp) {
+                              Err(compression_level) // on ne trouvera pas mieux...
+                          } else if (cc > compressed_children) {
+                              Ok((j, cc))
+                          } else {
+                              Ok((compression_level, compressed_children))
+                          }
+                      })
         {
             Err(n)  => n,
             Ok((n, _)) => n

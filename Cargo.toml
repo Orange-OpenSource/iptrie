@@ -11,7 +11,10 @@ categories = ["data-structures", "algorithms"]
 
 [dependencies]
 lux =  { git = "https://tess7:hmMiKbdt139v9vWAtifZ@gitlab.tech.orange/tess7/framework.git", optional = true }
-libc = "0.2"
+
+[dev-dependencies]
+libc = { version = "0.2" }
+termcolor = { version = "1.1" }
 
 [features]
 # Activate this feature to generate trie structures in a graphviz file

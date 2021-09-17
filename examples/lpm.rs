@@ -5,14 +5,20 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 use std::ptr::null_mut;
 use std::fs::File;
-use  std::os::unix::io::AsRawFd;
+use std::os::unix::io::AsRawFd;
+use std::io::Write;
 
-static EMPTY_PREFIX: &str = "<empty prefix>";
+use termcolor::{BufferedStandardStream, ColorChoice};
+
+// should be "end of line" (\n) terminated
+static EMPTY_PREFIX: &str = "<empty prefix>\n";
 
 type Ipv4Prefix = IpWholePrefix<Ipv4>;
 type Ipv6Prefix = IpWholePrefix<Ipv6>;
 
 fn main() {
+    let mut handle = BufferedStandardStream::stdout(ColorChoice::Never);
+
     let filename = env::args().skip(1).next().expect("needs a LPM file");
     let file = File::open(filename).expect("can’t open LPM file");
     let length = file.metadata().unwrap().len() as usize;
@@ -25,12 +31,11 @@ fn main() {
     }
     let lpmfile = unsafe { std::str::from_utf8(CStr::from_ptr(lpmfile).to_bytes()) }.unwrap();
 
-
     let mut map4 = IpPrefixMap::<Ipv4,Ipv4Prefix,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
     let mut map6 = IpPrefixMap::<Ipv6,Ipv6Prefix,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
 
-    lpmfile.split('\n').into_iter()
-        //.take(10000)
+    lpmfile.split_inclusive('\n').into_iter()
+       // .take(100)
         .filter(|s| !s.is_empty() && !s.starts_with('#'))// skip empty and comment lines
         .map(|s| (s, s.split_ascii_whitespace().into_iter().next().expect("bad formatted line")))
         .for_each(| (line, prefix) | {
@@ -42,22 +47,21 @@ fn main() {
                 eprintln!("WARN: skip bad formatted line: {}", line);
             }
         });
-    //map6.generate_graphviz_file("ipv6".into());
-    //maq’p6.open_dot_view();
+
+    //map4.open_dot_view();
     let map4 = map4.compile();
     let map6 = map6.compile();
-
+    //map4.open_dot_view();
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
             Ok(0) =>  break,
             Ok(_) => {
                 let input = &input[..(input.len()-1)];
-
                 if let Ok(addr) = input.parse::<Ipv4Addr>() {
-                    println!("{}", map4.lookup(&addr).1);
+                    handle.write_all(map4.lookup(&addr).1.as_bytes());
                 } else if let Ok(addr) = input.parse::<Ipv6Addr>() {
-                    println!("{}", map6.lookup(&addr).1);
+                    handle.write_all(map6.lookup(&addr).1.as_bytes());
                 } else {
                     eprintln!("WARN: can’t parse '{}' (not an IP address)", input);
                 }
