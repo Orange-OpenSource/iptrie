@@ -3,18 +3,12 @@ mod branching;
 use std::mem::size_of;
 use std::io;
 use std::io::Write;
-use std::process::{Stdio, Command};
-use std::fs::File;
-use std::path::PathBuf;
-use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
-use std::fmt::Display;
 
 use crate::trie::*;
 use crate::ip::*;
 use crate::patricia::*;
 use crate::lctrie::branching::{CompressedTree, Compressed};
-use std::collections::HashSet;
 
 
 pub struct LCTrie<IP:Ip, K:IpPrefix<IP>, V> {
@@ -36,7 +30,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
         let mut done = Vec::<Option<BranchingIndex>>::new();
         done.resize(trie.0.len(), None);
 
-        lctrie.compress(&trie, BranchingIndex::root(), BranchingIndex::root(), &mut done, 0);
+        lctrie.compress(&trie, BranchingIndex::root(), BranchingIndex::root(), &mut done, comp);
         lctrie.skip_redundant_parent(BranchingIndex::root(), LeafIndex::root_leaf(), BranchingIndex::root());
         lctrie
     }
@@ -48,7 +42,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
             .for_each(|i| {
                 if self[b].child(i).is_branching() {
                     let bb = BranchingIndex::from(self[b].child(i));
-                    if (self[bb].escape == esc) {
+                    if self[bb].escape == esc {
                         self[bb].parent = up;
                         self.skip_redundant_parent(bb, esc, up);
                     } else {
@@ -105,7 +99,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
             }
             *self[current].child_mut(currchild) = thechild.into();
         } else {
-            let mut thechild = BranchingIndex::from(thechild);
+            let thechild = BranchingIndex::from(thechild);
             if let Some(n) = done[thechild.index()] {
                 // cas on tombe sur un noeud de branchement deja compresse...
                 *self[current].child_mut(currchild) = n.into();
@@ -283,7 +277,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  crate::DotWriter for LCTrie<IP,K,V>
                                 .filter(|cc| b.child(c) == b.child(*cc))
                                 .fold(BitVec::singleton(c as u32), |mut group, cc| { group.set(cc as u32); group } );
                             done |= &group;
-                            if (b.child(c).is_leaf()) {
+                            if b.child(c).is_leaf() {
                                 writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", b.child(c), self[LeafIndex::from(b.child(c))])?;
                             }
                             writeln!(dot, "{0:?} -> {1:?} [fontcolor={2},color={2},label=\"{3}\"]", i, b.child(c), 1+(c%8), group)

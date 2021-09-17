@@ -1,7 +1,7 @@
 use std::{env, io};
 use iptrie::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::ffi::{CString, CStr};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::null_mut;
 use std::fs::File;
@@ -59,9 +59,9 @@ fn main() {
             Ok(_) => {
                 let input = &input[..(input.len()-1)];
                 if let Ok(addr) = input.parse::<Ipv4Addr>() {
-                    handle.write_all(map4.lookup(&addr).1.as_bytes());
+                    handle.write_all(map4.lookup(&addr).1.as_bytes()).unwrap();
                 } else if let Ok(addr) = input.parse::<Ipv6Addr>() {
-                    handle.write_all(map6.lookup(&addr).1.as_bytes());
+                    handle.write_all(map6.lookup(&addr).1.as_bytes()).unwrap();
                 } else {
                     eprintln!("WARN: can’t parse '{}' (not an IP address)", input);
                 }

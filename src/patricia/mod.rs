@@ -2,21 +2,15 @@
 mod branching;
 mod bits;
 
-use std::ops::{Shr, BitAnd, Index, IndexMut};
-use std::convert::{TryInto,TryFrom};
+use std::ops::{Index, IndexMut};
 use std::io;
 use std::io::Write;
-use std::process::{Stdio, Command};
-use std::fs::File;
-use std::path::PathBuf;
 
 use crate::trie::*;
 use crate::ip::*;
 pub(crate) use bits::*;
 pub(crate) use branching::*;
-use std::cmp::Ordering::Equal;
 use std::marker::PhantomData;
-use std::collections::hash_map::DefaultHasher;
 use crate::lctrie::LCTrie;
 
 
@@ -48,7 +42,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
     pub fn insert(&mut self, k: K, v: V) -> Option<V>
     {
         let addedleaf = self.leaves.push(Leaf::new(k, v));
-        let addedpfx = &self[addedleaf];
+        let addedpfx = self[addedleaf].clone();
 
         let (deepestbranching, deepestleaf) = self.branching.search_deepest_candidate(&addedpfx.slot());
         let mut l = deepestleaf;
@@ -63,7 +57,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
             b = self[b].parent;
             l = self[b].escape;
         }
-        if self[l] == *addedpfx {
+        if self[l] == addedpfx {
             self.leaves.remove_last().map(|l| l.value)
         } else {
             self.branching.insert_prefix(addedleaf, &addedpfx.slot(), addedpfx.len(),
@@ -108,11 +102,11 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
     {
         let (mut n, mut l) = self.branching.search_deepest_candidate(&k.slot());
 
-        if (l != self[n].escape) {
+        if l != self[n].escape {
             if k.matched(&self[l]) { return l; }
             l = self[n].escape;
         }
-        while (!k.matched(&self[l])) {
+        while !k.matched(&self[l]) {
             debug_assert!( !l.is_root_leaf() );
             n = self[n].parent;
             l = self[n].escape;
@@ -169,7 +163,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> crate::graphviz::DotWriter for RadixTrie<IP,K,V>
                 b.child.iter()
                     .enumerate()
                     .filter(|(_, &c)| c != b.escape) // avoid redundant link
-                    .try_for_each(|(j,c)|
+                    .try_for_each(|(j, _)|
                         writeln!(dot, "{0} -> {1:?} [fontcolor={2},color={2},label={3}]", i, b.child[j], j+1, j)
                     )
             )?;

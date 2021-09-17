@@ -1,8 +1,7 @@
 use crate::ip::{Ip, Ipv4, Ipv6, Ipv6s};
-use std::ops::{Shr, Add, Index, Shl};
+use std::ops::{Shr, Shl};
 use std::marker::PhantomData;
 use std::fmt::{Debug, Formatter, Display};
-use std::process::Output;
 use std::cmp::Ordering;
 
 pub(crate) trait BitMatch<T:Ip>
@@ -76,23 +75,6 @@ impl<T:Ip> Display for BitIndex<T>
 {
     #[inline] fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { Display::fmt(&self.0, f) }
 }
-
-macro_rules! bitindex {
-    ($X:ty) => {
-        impl BitMatch<$X> for BitIndex<$X> {
-            #[inline]
-            fn is_set(&self, slot:$X) -> bool { (slot >> self.0) & 1 != 0 }
-            #[inline]
-            fn from_first_bit(slot: $X) -> Self { (slot.leading_zeros() as u8 + 1).into() }
-        }
-    };
-}
-
-/*bitindex!(u32);
-bitindex!(u64);
-bitindex!(u128);
-*/
-
 
 /// second impl: based on an ip mask (with only one bit set)
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]

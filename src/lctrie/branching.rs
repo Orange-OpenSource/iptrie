@@ -2,11 +2,11 @@
 use std::mem::size_of;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
-use std::fmt::{Display, Debug, Formatter};
+use std::fmt::{Debug, Formatter};
 
 use crate::trie::*;
 use crate::ip::*;
-use crate::patricia::*;
+
 
 #[repr(C)]
 #[derive(Copy, Clone)]

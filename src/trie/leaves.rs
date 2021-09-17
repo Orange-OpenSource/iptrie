@@ -1,10 +1,9 @@
 
 use crate::trie::LeafIndex;
 use std::ops::{Index, IndexMut};
-use std::marker::PhantomData;
 
 #[derive(Clone)]
-pub(crate) struct TrieLeaves<L>(Vec<(L)>);
+pub(crate) struct TrieLeaves<L>(Vec<L>);
 
 
 pub(crate) struct Leaf<K,V> {

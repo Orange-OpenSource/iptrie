@@ -163,7 +163,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
 
         if (pos > deepestlen.into()) && (deepestlen < addedlen) {
             // tout se joue au dela du prefixe le plus long dans le trie
-            if (self[n].child(addedslot) == self[n].escape) {
+            if self[n].child(addedslot) == self[n].escape {
                 *self[n].child_mut(addedslot) = addedindex.into();
             } else {
                 self.insert_prefix_branching(n, deepestindex, addedindex.into(), (deepestlen + 1).into(), addedslot);
@@ -179,7 +179,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
 
             // ici, sauf erreur, la longueur du prefixe de b->escape n'est pas egale
             // a addedlength sinon, cela voudrait dire que le prefixe ajoute etati
-            if (self[n].bit < pos.into()) {
+            if self[n].bit < pos.into() {
                 // il faut inserer un branchement avec la bonne position
                 self.insert_prefix_branching(n, addedindex, self[n].child(deepestslot), pos.into(), deepestslot);
             } else {
@@ -199,7 +199,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
 
             // il faut maintenant s'assurer qu'on teste bien la bonne position dans le
             // branchement courant (si ce n'est pas le cas, on ajoute le branchement idoine)
-            if (self[n].bit < pos) {
+            if self[n].bit < pos {
                 n = self.insert_prefix_branching(n, self[n].escape, self[n].child(deepestslot), pos, deepestslot);
             }
             debug_assert_eq!(self[n].bit, pos);
@@ -235,7 +235,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
                           let cc = self.count_descendants(b, b.bit >> j, b.escape);
                           if cc < (1<<j)/(1<<comp) {
                               Err(compression_level) // on ne trouvera pas mieux...
-                          } else if (cc > compressed_children) {
+                          } else if cc > compressed_children {
                               Ok((j, cc))
                           } else {
                               Ok((compression_level, compressed_children))
