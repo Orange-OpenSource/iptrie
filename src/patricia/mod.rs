@@ -3,15 +3,12 @@ mod branching;
 mod bits;
 
 use std::ops::{Index, IndexMut};
-use std::io;
-use std::io::Write;
 
 use crate::trie::*;
 use crate::ip::*;
 pub(crate) use bits::*;
 pub(crate) use branching::*;
 use std::marker::PhantomData;
-use crate::lctrie::LCTrie;
 
 
 pub(crate) struct RadixTrie<IP:Ip, K:IpPrefix<IP>, V>
@@ -30,11 +27,6 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
             leaves: TrieLeaves::new(capacity, value),
             phantom: Default::default()
         }
-    }
-
-    #[inline]
-    pub(crate) fn compile(self) -> LCTrie<IP,K,V> {
-        LCTrie::new(self)
     }
 
 
@@ -70,40 +62,61 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
     #[inline]
     pub fn get<P: IpPrefix<IP>>(&self, k: &P) -> Option<&V>
     {
-        let (_, l) = self.branching.search_deepest_candidate(&k.slot());
-        let leaf = &self.leaves[l];
-        if leaf.prefix.slot() == k.slot() && leaf.prefix.len() == k.len() {
-            Some(&leaf.value)
-        } else {
-            None
-        }
+        let (_,l) = self.inner_lookup(k);
+        if k.len() == self[l].len() { Some(&self.leaves[l].value) } else { None }
     }
 
     #[inline]
     pub fn get_mut<P: IpPrefix<IP>>(&mut self, k: &P) -> Option<&mut V>
     {
-        let (_, l) = self.branching.search_deepest_candidate(&k.slot());
-        let leaf = &mut self.leaves[l];
-        if leaf.prefix.slot() == k.slot() && leaf.prefix.len() == k.len() {
-            Some(&mut leaf.value)
-        } else {
-            None
-        }
+        let (_,l) = self.inner_lookup(k);
+        if k.len() == self[l].len() { Some(&mut self.leaves[l].value) } else { None }
     }
 
     #[inline]
     pub fn remove<P: IpPrefix<IP>>(&mut self, k: &P) -> Option<V>
     {
-        todo!()
+        let (mut b,l) = self.inner_lookup(k);
+        if k.len() != self[l].len() {
+            None
+        } else {
+            if l == self[b].escape {
+                // the node to suppress is an escape node
+                // so we should climb to its first appearance
+                while self[self[b].parent].escape == l {
+                    b = self[b].parent;
+                }
+                // and we propagate the removal (i.e. the escape change)
+                self.branching.replace_escape_leaf(b, l, self[self[b].parent].escape);
+            } else {
+                // we suppress a leaf of the tree... so easy... (redirect to escape)
+                *self[b].child_mut(&k.slot()) = self[b].escape.into();
+            }
+
+            // todo: some branching possibly becomes useless and should be removed here
+
+            // reindex the leaf which will be swapped with the removed one
+            let lastleaf = LeafIndex::from(self.leaves.len()-1);
+            let (mut bb,_ll) = self.inner_lookup(&self[lastleaf].slot());
+            debug_assert_eq!( self[lastleaf].len(), self[_ll].len() );
+            if self[bb].child[0] == lastleaf { self[bb].child[0] = l.into(); }
+            if self[bb].child[1] == lastleaf { self[bb].child[1] = l.into(); }
+            while self[bb].escape == lastleaf {
+                self[bb].escape = l;
+                bb = self[bb].parent; // climb up the escape chain
+            }
+            // effective removal of the leaf
+            Some(self.leaves.0.swap_remove(l.index()).value)
+        }
     }
 
     #[inline]
-    fn inner_lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> LeafIndex
+    fn inner_lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> (BranchingIndex,LeafIndex)
     {
         let (mut n, mut l) = self.branching.search_deepest_candidate(&k.slot());
 
         if l != self[n].escape {
-            if k.matched(&self[l]) { return l; }
+            if k.matched(&self[l]) { return (n,l); }
             l = self[n].escape;
         }
         while !k.matched(&self[l]) {
@@ -111,13 +124,14 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
             n = self[n].parent;
             l = self[n].escape;
         }
-        l
+        (n,l)
     }
+
 
     #[inline]
     pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> (&K, &V)
     {
-        let l = self.inner_lookup(k);
+        let (_,l) = self.inner_lookup(k);
         let result = &self.leaves[l];
         return (&result.prefix, &result.value)
     }
@@ -125,7 +139,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
     #[inline]
     pub fn lookup_mut<Q: IpPrefixMatch<IP>>(&mut self, k: &Q) -> (&K, &mut V)
     {
-        let l = self.inner_lookup(k);
+        let (_,l) = self.inner_lookup(k);
         let result = &mut self.leaves[l];
         return (&result.prefix, &mut result.value)
     }

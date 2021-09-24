@@ -1,13 +1,14 @@
 use std::str::FromStr;
 use std::ops::*;
 use std::fmt;
+use std::hash::Hash;
 use crate::ip::{IpPrefix,IpPrefixMatch};
 
 /// Generic tag to specify the IP slot to use
 pub trait Ip
 : Clone + Copy + Default
 + fmt::Debug + fmt::Binary
-+ Eq + PartialEq + Ord + PartialOrd
++ Eq + PartialEq + Ord + PartialOrd + Hash
 + Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>
 + Shl<u8,Output=Self> + Shr<u8,Output=Self>
 + From<u8> + Into<u8> + From<u16> + Into<u16>
@@ -23,7 +24,7 @@ pub trait Ip
  }
 
 /// Tag to use IPv4 prefixes (/32 or /27 for ltd)
-#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd, Hash)]
 pub struct Ipv4(u32);
 impl Ip for Ipv4 {
     type Addr = std::net::Ipv4Addr;
@@ -44,7 +45,7 @@ impl Ip for Ipv4 {
 }
 
 /// Tag to use short IPv6 prefixes (/64 or /58 for ltd)
-#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd, Hash)]
 pub struct Ipv6s(u64);
 impl Ip for Ipv6s {
     type Addr = std::net::Ipv6Addr;
@@ -71,7 +72,7 @@ impl Ip for Ipv6s {
 }
 
 /// Tag to use IPv6 prefixes (/128 or /121 for ltd)
-#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd, Hash)]
 pub struct Ipv6(u128);
 impl Ip for Ipv6 {
     type Addr = std::net::Ipv6Addr;

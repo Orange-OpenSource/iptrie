@@ -3,7 +3,7 @@ use crate::trie::LeafIndex;
 use std::ops::{Index, IndexMut};
 
 #[derive(Clone)]
-pub(crate) struct TrieLeaves<L>(Vec<L>);
+pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
 
 
 pub(crate) struct Leaf<K,V> {

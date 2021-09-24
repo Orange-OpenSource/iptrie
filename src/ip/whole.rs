@@ -7,7 +7,7 @@ use std::fmt;
 use std::cmp::Ordering;
 
 
-#[derive(Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Default, Hash)]
 pub struct IpWholePrefix<IP, MASK>
     where IP: Ip, MASK: IpMask<IP>
 {
@@ -104,7 +104,7 @@ impl<IP,MASK> fmt::Debug for IpWholePrefix<IP, MASK>
 ///
 /// Only the length is stored: small memory use but
 /// more computation to match the prefix which uses it.
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct IpCidrMask<IP:Ip>(u8, PhantomData<IP>);
 // note: we store the number of trailing zeroes, not the cidr
 // (the purpose is to compute the bitmask more easily: is it correct ?)

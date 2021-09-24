@@ -12,6 +12,7 @@ use std::convert::{TryInto, TryFrom};
 pub use slot::*;
 pub use ltd::*;
 pub use matching::*;
+pub use whole::*;
 
 use error::PrefixError;
 

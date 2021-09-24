@@ -20,7 +20,7 @@ impl<T:Ip,B:BitMatch<T>> Branching<T,B> {
         if self.bit.is_set(slot) { self.child[1] } else { self.child[0] }
     }
 
-    fn child_mut(&mut self, slot:&T) -> &mut NodeIndex {
+    pub(crate) fn child_mut(&mut self, slot:&T) -> &mut NodeIndex {
         if self.bit.is_set(slot) { &mut self.child[1] } else { &mut self.child[0] }
     }
 }
@@ -103,7 +103,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
         }
     }
 
-    pub fn replace_escade_leaf(&mut self, n: BranchingIndex, l1: LeafIndex, l2: LeafIndex)
+    pub fn replace_escape_leaf(&mut self, n: BranchingIndex, l1: LeafIndex, l2: LeafIndex)
     {
         debug_assert!(self[n].escape == l1);
         self[n].escape = l2;
@@ -113,7 +113,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
                 if c == l1 { *&mut self[n].child[i] = l2.into(); }
             } else {
                 if self[c].escape == l1 {
-                    self.replace_escade_leaf(c.into(), l1, l2);
+                    self.replace_escape_leaf(c.into(), l1, l2);
                 }
             }
         }
@@ -138,7 +138,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
             debug_assert!(self[x].bit > p);
             self[x].parent = nn;
             if self[x].escape == self[n].escape {
-                self.replace_escade_leaf(x.into(), self[n].escape, e);
+                self.replace_escape_leaf(x.into(), self[n].escape, e);
             }
         }
         *self[n].child_mut(slot) = nn.into();
@@ -184,7 +184,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
                 self.insert_prefix_branching(n, addedindex, self[n].child(deepestslot), pos.into(), deepestslot);
             } else {
                 debug_assert_eq!(self[n].bit, pos.into());
-                self.replace_escade_leaf(n, self[n].escape, addedindex);
+                self.replace_escape_leaf(n, self[n].escape, addedindex);
             }
         } else {
             // bon, la, on sait que la position discriminante est inferieure a la longueur

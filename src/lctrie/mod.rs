@@ -1,8 +1,6 @@
 mod branching;
 
 use std::mem::size_of;
-use std::io;
-use std::io::Write;
 use std::ops::{Index, IndexMut};
 
 use crate::trie::*;
@@ -41,7 +39,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
             .into_iter()
             .for_each(|i| {
                 if self[b].child(i).is_branching() {
-                    let bb = BranchingIndex::from(self[b].child(i));
+                    let bb = BranchingIndex::from(*self[b].child(i));
                     if self[bb].escape == esc {
                         self[bb].parent = up;
                         self.skip_redundant_parent(bb, esc, up);
@@ -125,9 +123,9 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
         let mut l = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.slot()) {
-                n if n.is_branching() => b = n.into(),
+                n if n.is_branching() => b = (*n).into(),
                 n => { // leaf
-                    l = n.into();
+                    l = (*n).into();
                     break;
                 }
             }
@@ -147,9 +145,9 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
         let mut l = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.slot()) {
-                n if n.is_branching() => b = n.into(),
+                n if n.is_branching() => b = (*n).into(),
                 n => { // leaf
-                    l = n.into();
+                    l = (*n).into();
                     break;
                 }
             }
@@ -184,9 +182,9 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
         let mut l = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.slot()) {
-                n if n.is_branching() => b = n.into(),
+                n if n.is_branching() => b = (*n).into(),
                 n => { // leaf
-                    l = n.into();
+                    l = (*n).into();
                     break;
                 }
             }
@@ -206,6 +204,36 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
         l
     }
 
+    pub fn info(&self)
+    {
+        let mut counts = [0;128];
+        self.branching.iter()
+            .for_each(|(_,c)| counts[c.size as usize] += 1 );
+
+        println!("{} branching, {} leaves", self.branching.iter().count(), self.leaves.len());
+        println!("root: {} children (2^{}), {} shift", self.branching[0.into()].children(), self.branching[0.into()].size, self.branching[0.into()].shift);
+
+        let mut counts = [0;128];
+        self.branching.iter()
+            .for_each(|(_,c)| counts[c.size as usize] += 1 );
+        println!("size: {:?}", counts);
+
+        let mut counts = [0;128];
+        self.branching.iter()
+            .for_each(|(_,c)| counts[c.shift as usize] += 1 );
+        println!("shift: {:?}", counts);
+
+        let mut counts = [0;128];
+        self.branching.iter()
+            .skip(1)
+            .for_each(|(_,c)| {
+                let p = self.branching[c.parent];
+                counts[(c.shift - p.shift - p.size) as usize] += 1
+            } );
+        println!("shift: {:?}", counts);
+
+        println!();
+    }
 }
 
 
@@ -272,13 +300,13 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  crate::DotWriter for LCTrie<IP,K,V>
                 let mut done = BitVec::new();
                 (0..b.children()).into_iter()
                     .try_for_each(|c|
-                        if !done[c as u32] && b.child(c) != b.escape {
+                        if !done[c as u32] && *b.child(c) != b.escape {
                             let group = ((c+1)..b.children()).into_iter()
                                 .filter(|cc| b.child(c) == b.child(*cc))
                                 .fold(BitVec::singleton(c as u32), |mut group, cc| { group.set(cc as u32); group } );
                             done |= &group;
                             if b.child(c).is_leaf() {
-                                writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", b.child(c), self[LeafIndex::from(b.child(c))])?;
+                                writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", b.child(c), self[LeafIndex::from(*b.child(c))])?;
                             }
                             writeln!(dot, "{0:?} -> {1:?} [fontcolor={2},color={2},label=\"{3}\"]", i, b.child(c), 1+(c%8), group)
                         } else { Ok(()) })

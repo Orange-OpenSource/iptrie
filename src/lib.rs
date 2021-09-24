@@ -5,8 +5,6 @@ mod trie;
 mod patricia;
 mod lctrie;
 
-use std::io::Write;
-
 pub use ip::*;
 use crate::patricia::*;
 use crate::lctrie::*;
@@ -138,4 +136,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixCompiledMap<IP,K,V>
 
     #[inline]
     pub fn lookup_mut<Q: IpPrefixMatch<IP>>(&mut self, k: &Q) -> (&K,&mut V) { self.0.lookup_mut(k) }
+
+    #[inline]
+    pub fn info(&self) { self.0.info() }
 }

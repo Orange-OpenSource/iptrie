@@ -55,26 +55,28 @@ impl<IP:Ip> Compressed<IP> {
 
     fn offset(children: u16) -> usize { children as usize + size_of::<Compressed<IP>>()/size_of::<NodeIndex>() }
 
-    pub(crate) fn child(&self, n:u16) -> NodeIndex
+    pub(crate) fn child(&self, n:u16) -> &NodeIndex
     {
         debug_assert!( n < self.children() );
-       // let n = self.mask as usize & (n as usize >> (size_of::<IP>() * 8 - (self.shift + self.size) as usize));
-        let offset = n as usize + size_of::<Compressed<IP>>()/size_of::<NodeIndex>();
-        let p = (self as * const Compressed<IP>).cast::<NodeIndex>();
-        unsafe { *p.add(offset) }
+        unsafe {
+            (self as * const Compressed<IP>).add(1)
+                .cast::<NodeIndex>().add(n as usize)
+                .as_ref().unwrap()
+        }
     }
 
     pub(crate) fn child_mut(&mut self, n:u16) -> &mut NodeIndex
     {
         debug_assert!( n < self.children() );
-      //  let n = self.mask as usize & (dbg!(n) as usize >> (size_of::<IP>() * 8 - (self.shift + self.size) as usize));
-        let offset = n as usize + size_of::<Compressed<IP>>()/size_of::<NodeIndex>();
-        let p = (self as * mut Compressed<IP>).cast::<NodeIndex>();
-        unsafe { p.add(offset).as_mut().unwrap() }
+        unsafe {
+            (self as * mut Compressed<IP>).add(1)
+                .cast::<NodeIndex>().add(n as usize)
+                .as_mut().unwrap()
+        }
     }
 
     #[inline]
-    pub(crate) fn lookup(&self, slot: &IP) -> NodeIndex {
+    pub(crate) fn lookup(&self, slot: &IP) -> &NodeIndex {
         self.child(self.letter(slot))
     }
 }
