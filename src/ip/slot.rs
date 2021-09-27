@@ -6,7 +6,8 @@ use crate::ip::{IpPrefix,IpPrefixMatch};
 
 /// Generic tag to specify the IP slot to use
 pub trait Ip
-: Clone + Copy + Default
+: 'static
++ Clone + Copy + Default
 + fmt::Debug + fmt::Binary
 + Eq + PartialEq + Ord + PartialOrd + Hash
 + Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>
