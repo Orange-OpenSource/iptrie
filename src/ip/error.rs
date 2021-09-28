@@ -13,12 +13,8 @@ pub enum PrefixError {
     /// Notice that IPv4 can’t be parsed as IPv6 address (and vice-versa)
     InvalidAddress,
 
-    /// The mask is unparsable. A number is expected.
-    InvalidMask,
-
-    /// The mask value is to great. Remember that limited prefix
-    /// requires smaller values.
-    TooLongMask
+    /// The mask is unparsable or the parsed number is not valid.
+    InvalidMask
 }
 
 impl Error for PrefixError {}
@@ -30,7 +26,6 @@ impl fmt::Display for PrefixError
             PrefixError::MissingMask => write!(f, "IP mask (CIDR) is missing"),
             PrefixError::InvalidAddress => write!(f, "Invalid IP address"),
             PrefixError::InvalidMask => write!(f, "Invalid mask (CIDR)"),
-            PrefixError::TooLongMask => write!(f, "Too big mask (CIDR)"),
         }
     }
 }

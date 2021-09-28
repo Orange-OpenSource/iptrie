@@ -3,6 +3,7 @@ mod error;
 mod whole;
 mod ltd;
 mod matching;
+mod ipv6prefix64;
 
 use std::fmt;
 use std::str::FromStr;
@@ -13,6 +14,7 @@ pub use slot::*;
 pub use ltd::*;
 pub use matching::*;
 pub use whole::*;
+pub use ipv6prefix64::Ipv6Prefix64;
 
 use error::PrefixError;
 

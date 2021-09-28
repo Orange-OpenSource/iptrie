@@ -32,7 +32,7 @@ impl<IP:Ip> TryFrom<u8> for IpMaskLtd<IP>
         if value <= Self::MAX_LEN {
             Ok(Self::new(value))
         } else {
-            Err(PrefixError::TooLongMask)
+            Err(PrefixError::InvalidMask)
         }
     }
 }

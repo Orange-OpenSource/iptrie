@@ -162,7 +162,7 @@ impl<IP:Ip> TryFrom<u8> for IpCidrMask<IP>
         if value <= Self::MAX_LEN {
             Ok(Self::new(value))
         } else {
-            Err(PrefixError::TooLongMask)
+            Err(PrefixError::InvalidMask)
         }
     }
 }
@@ -242,7 +242,7 @@ impl<IP:Ip> TryFrom<u8> for IpBitMask<IP>
         if value <= Self::MAX_LEN {
             Ok(Self::new(value))
         } else {
-            Err(PrefixError::TooLongMask)
+            Err(PrefixError::InvalidMask)
         }
     }
 }
