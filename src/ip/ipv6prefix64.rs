@@ -72,6 +72,12 @@ impl PartialOrd for Ipv6Prefix64
     }
 }
 
+impl From<Ipv6s> for Ipv6Prefix64
+{
+    #[inline]
+    fn from(slot: Ipv6s) -> Self { Self(slot) }
+}
+
 impl FromStr for Ipv6Prefix64
 {
     type Err = PrefixError;
@@ -106,7 +112,6 @@ impl IpMask<Ipv6s> for Ipv6Mask64
     #[inline] fn len(&self) -> u8 { 64 }
     #[inline] fn bitmask(&self) -> Ipv6s { (!0u64).into() }
 }
-
 
 impl TryFrom<u8> for Ipv6Mask64
 {
