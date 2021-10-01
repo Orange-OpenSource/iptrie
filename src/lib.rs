@@ -1,4 +1,5 @@
 #![feature(unchecked_math)]
+#![feature(drain_filter)]
 
 pub mod ip;
 mod trie;
@@ -29,7 +30,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
     pub fn len(&self) -> usize { self.0.leaves.len() }
 
     #[inline]
-    pub fn with_root(value:V) -> Self { Self::with_root_and_capacity(value, 1000) }
+    pub fn with_root(value: V) -> Self { Self::with_root_and_capacity(value, 1000) }
 
     #[inline]
     pub fn with_root_and_capacity(value: V, capacity: usize) -> Self {
@@ -37,12 +38,12 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
     }
 
     #[inline]
-    pub fn compile(self) -> LCTrie<IP,K,V> { LCTrie::new(self.0) }
+    pub fn compile(self) -> LCTrie<IP, K, V> { LCTrie::new(self.0) }
 
     #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V>
     {
-        self.0.insert(k,v)
+        self.0.insert(k, v)
     }
 
     #[inline]
@@ -61,10 +62,31 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
     }
 
     #[inline]
-    pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> (&K,&V) { self.0.lookup(k) }
+    pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> (&K, &V) { self.0.lookup(k) }
 
     #[inline]
-    pub fn lookup_mut<Q: IpPrefixMatch<IP>>(&mut self, k: &Q) -> (&K,&mut V) { self.0.lookup_mut(k) }
+    pub fn lookup_mut<Q: IpPrefixMatch<IP>>(&mut self, k: &Q) -> (&K, &mut V) { self.0.lookup_mut(k) }
+
+    #[inline]
+    pub fn drain(&mut self) -> impl Iterator + '_ {
+        self.0.leaves.0.drain(1..).map(|l| (l.prefix,l.value))
+    }
+
+    #[inline]
+    pub fn drain_filter<'a,F>(&'a mut self, mut pred: F) -> impl Iterator + 'a
+        where F: 'a + FnMut(&K, &mut V) -> bool
+    {
+        unimplemented!();
+        self.0.leaves.0.drain_filter(move |l| (pred)(&l.prefix,&mut l.value))
+    }
+}
+
+impl<IP:Ip,K:IpPrefix<IP>,V> Extend<(K,V)> for IpPrefixMap<IP,K,V>
+{
+    fn extend<T: IntoIterator<Item=(K, V)>>(&mut self, iter: T)
+    {
+        iter.into_iter().for_each(|(k,v)| {self.insert(k,v);})
+    }
 }
 
 #[cfg(feature= "graphviz")]
@@ -112,6 +134,10 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
         &self.0.lookup(k).0
     }
 
+    #[inline]
+    pub fn drain(&mut self) -> impl Iterator + '_ {
+        self.0.leaves.0.drain(1..).map(|l| l.prefix )
+    }
 }
 
 pub struct IpPrefixCompiledMap<IP:Ip,K:IpPrefix<IP>,V>(LCTrie<IP,K,V>);
