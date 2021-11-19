@@ -141,6 +141,9 @@ macro_rules! ipslot {
         impl From<$B> for $X {
             #[inline] fn from(v:$B) -> Self { Self(v) }
         }
+        impl From<<$X as Ip>::Addr> for $X {
+            #[inline] fn from(a:<$X as Ip>::Addr) -> Self { Self::from_addr(a) }
+        }
         impl IpPrefixMatch<Self> for $X {
             #[inline]
             fn matched<P:IpPrefix<$X>>(&self, pfx: &P) -> bool {
@@ -154,4 +157,3 @@ macro_rules! ipslot {
 ipslot!(Ipv4, u32);
 ipslot!(Ipv6, u128);
 ipslot!(Ipv6s,u64);
-
