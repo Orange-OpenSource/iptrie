@@ -5,7 +5,7 @@ use crate::trie::*;
 use crate::ip::*;
 use super::bits::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub(crate) struct Branching<T:Ip, B:BitMatch<T>> {
     pub(crate) escape: LeafIndex, // leaf associated to this branching node
     pub(crate) parent: BranchingIndex, // to climb up the trie (>=0)
@@ -24,7 +24,7 @@ impl<T:Ip,B:BitMatch<T>> Branching<T,B> {
         if self.bit.is_set(slot) { &mut self.child[1] } else { &mut self.child[0] }
     }
 }
-
+#[derive(Clone)]
 pub(crate) struct BranchingTree<T:Ip, B:BitMatch<T>>(pub(crate) Vec<Branching<T,B>>);
 
 impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>

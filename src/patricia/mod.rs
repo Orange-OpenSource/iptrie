@@ -10,7 +10,7 @@ pub(crate) use bits::*;
 pub(crate) use branching::*;
 use std::marker::PhantomData;
 
-
+#[derive(Clone)]
 pub(crate) struct RadixTrie<IP:Ip, K:IpPrefix<IP>, V>
 {
     pub(crate) branching: BranchingTree<IP,BitIndex<IP>>,

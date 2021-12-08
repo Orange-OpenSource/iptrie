@@ -6,6 +6,7 @@ use std::ops::{Index, IndexMut};
 pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
 
 
+#[derive(Clone)]
 pub(crate) struct Leaf<K,V> {
     pub(crate) prefix: K,
     pub(crate) value: V

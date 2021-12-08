@@ -8,8 +8,6 @@ use std::fs::File;
 use std::os::unix::io::AsRawFd;
 use std::io::Write;
 
-use termcolor::{BufferedStandardStream, ColorChoice};
-
 // should be "end of line" (\n) terminated
 static EMPTY_PREFIX: &str = "<empty prefix>\n";
 
@@ -17,7 +15,7 @@ type Ipv4Prefix = IpWholePrefix<Ipv4>;
 type Ipv6Prefix = IpWholePrefix<Ipv6>;
 
 fn main() {
-    let mut handle = BufferedStandardStream::stdout(ColorChoice::Never);
+    let handle = io::BufWriter::new(io::stdout());
 
     let filename = env::args().skip(1).next().expect("needs a LPM file");
     let file = File::open(filename).expect("can’t open LPM file");
@@ -51,7 +49,10 @@ fn main() {
     //map4.open_dot_view();
     let map4 = map4.compile();
     let map6 = map6.compile();
-    //map4.open_dot_view();
+   // map6.generate_graphviz_file("a".into());
+    map4.info();
+    map6.info();
+    std::process::exit(0);
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {

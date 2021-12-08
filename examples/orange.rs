@@ -48,7 +48,7 @@ fn main() {
             println!("{} -> ({},{})", a, k, v);
         });
 
-    trie.open_dot_view().expect("can’t open dot view");
+    //trie.open_dot_view().expect("can’t open dot view");
     println!();
 /*
     let trie = trie.compile();
@@ -60,5 +60,5 @@ fn main() {
 */
    dbg!( trie.remove(&"1.8.0.0/24".parse::<IpWholePrefix<Ipv4>>().unwrap()));
     //trie.remove(&"1.1.0.0/20".parse::<IpWholePrefix<Ipv4>>().unwrap());
-    trie.open_dot_view().expect("can’t open dot view");
+    //trie.open_dot_view().expect("can’t open dot view");
 }
