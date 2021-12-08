@@ -13,6 +13,7 @@ use crate::lctrie::*;
 #[cfg(feature = "graphviz")] mod graphviz;
 #[cfg(feature = "graphviz")] pub use graphviz::DotWriter;
 
+#[derive(Clone)]
 pub struct IpPrefixMap<IP:Ip,K:IpPrefix<IP>,V>(RadixTrie<IP,K,V>);
 
 impl <IP:Ip,K:IpPrefix<IP>,V:Default> IpPrefixMap<IP,K,V>
