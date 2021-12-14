@@ -208,32 +208,57 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
         }
     }
 
-    pub(crate) fn count_descendants(&self, b: &Branching<T,B>, p: B, stop: LeafIndex) -> usize
+    // this is the number of suppressed branching if compression is done
+    // note: this node is counted also
+    pub(crate) fn count_compressed_branching(&self, b: &Branching<T,B>, p: B, stop: LeafIndex) -> usize
     {
-        b.child.iter()
+        b.child
+            .iter()
             .filter(|c| c.is_branching())
             .map(|c| &self[BranchingIndex::from(*c)])
-            .try_fold(1, |count,b|
-                if b.escape != stop {
-                    Err(()) // prefix change
-                } else if b.bit <= p {
-                    Ok(count + self.count_descendants(b, p, stop))
+            .fold(1, |count, b|
+                if b.bit <= p {
+                    count + self.count_compressed_branching(b, p, stop)
                 } else {
-                    Ok(count)
+                    count
                 }
             )
-            .unwrap_or(0) // when prefix changes
     }
 
+    fn compression_level_max(&self, b: &Branching<T,B>, max: u8, stop: LeafIndex) -> u8
+    {
+        if max == 0 { return 0; }
 
+        // NOTE : on ne peut pas compresser des niveaux avec des prefixes differents
+        // donc on s'arrete quand le prefixe differe ou quand on atteint max
+        if b.escape != stop { return 0; }
+
+        if b.child[0].is_branching() {
+            if b.child[1].is_branching() {
+                let l0 = self.compression_level_max(&self[BranchingIndex::from(b.child[0])], max-1, stop);
+                let l1 = self.compression_level_max(&self[BranchingIndex::from(b.child[1])], max-1, stop);
+                max.min(1 + l0.min(l1))
+            } else {
+                1+self.compression_level_max(&self[BranchingIndex::from(b.child[0])], max-1, stop)
+            }
+        } else {
+            if b.child[1].is_branching() {
+                1+self.compression_level_max(&self[BranchingIndex::from(b.child[1])], max-1, stop)
+            } else {
+                // two leaves... no branching
+                1
+            }
+        }
+    }
 
     pub(crate) fn compression_level(&self, b: &Branching<T,B>, comp: u8 ) -> u8
     {
-        match (1..=15).into_iter()
+        let compression_max = self.compression_level_max(b, 15, b.escape);
+        match (1..compression_max).into_iter()
             .try_fold((0u8,0),
                       |(compression_level, compressed_children), j| {
-                          let cc = self.count_descendants(b, b.bit >> j, b.escape);
-                          if cc < (1<<j)/(1<<comp) {
+                          let cc = self.count_compressed_branching(b, b.bit >> j, b.escape);
+                          if cc < (1<<j)/(1<<comp)/2 {
                               Err(compression_level) // on ne trouvera pas mieux...
                           } else if cc > compressed_children {
                               Ok((j, cc))

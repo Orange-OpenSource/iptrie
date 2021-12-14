@@ -12,6 +12,7 @@ use crate::lctrie::*;
 
 #[cfg(feature = "graphviz")] mod graphviz;
 #[cfg(feature = "graphviz")] pub use graphviz::DotWriter;
+#[cfg(feature = "graphviz")] use std::io;
 
 #[derive(Clone)]
 pub struct IpPrefixMap<IP:Ip,K:IpPrefix<IP>,V>(RadixTrie<IP,K,V>);
@@ -93,7 +94,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> Extend<(K,V)> for IpPrefixMap<IP,K,V>
 #[cfg(feature= "graphviz")]
 impl<IP:Ip,K:IpPrefix<IP>,V> graphviz::DotWriter for IpPrefixMap<IP,K,V>
 {
-    fn write_dot(&self, dot: &mut dyn Write) -> std::io::Result<()> {
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()> {
         self.0.write_dot(dot)
     }
 }

@@ -2,6 +2,7 @@
 mod branching;
 mod bits;
 
+#[cfg(feature= "graphviz")] use std::io;
 use std::ops::{Index, IndexMut};
 
 use crate::trie::*;
@@ -148,7 +149,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
 #[cfg(feature= "graphviz")]
 impl<IP:Ip, K:IpPrefix<IP>, V> crate::graphviz::DotWriter for RadixTrie<IP,K,V>
 {
-    fn write_dot(&self, dot: &mut dyn Write) -> io::Result<()>
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
     {
         writeln!(dot, "digraph patricia {{")?;
         writeln!(dot, "    rankdir=LR")?;

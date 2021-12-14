@@ -7,7 +7,7 @@ use crate::trie::*;
 use crate::ip::*;
 use crate::patricia::*;
 use crate::lctrie::branching::{CompressedTree, Compressed};
-
+#[cfg(feature= "graphviz")] use std::io;
 
 pub struct LCTrie<IP:Ip, K:IpPrefix<IP>, V> {
     branching: CompressedTree<IP>,
@@ -76,9 +76,11 @@ impl<IP:Ip, K:IpPrefix<IP>, V>  LCTrie<IP,K,V> {
                                 start: BranchingIndex, // the start point of the analysis (in the radix trie)
                                 mut b: BranchingIndex, // the current point of the analysis (in the radix trie)
                                 done: &mut Vec<Option<BranchingIndex>>, // the already known nodes (branching in radix trie => compressed in LC-trie)
-                                comp: u8) // the compression level
+                                comp: u8) // the compression level: 0=>1bit (no compression), N=>N+1 bits
     //-> NodeIndex
     {
+        debug_assert_eq!( tree[start].escape , tree[b].escape );
+
         let c = &self[current];
         let thechild = if currchild & (1 << (c.size - depth)) == 0 { tree[b].child[0]} else { tree[b].child[1] };
         if thechild.is_leaf() {
@@ -270,7 +272,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> IndexMut<BranchingIndex> for LCTrie<IP,K,V>
 #[cfg(feature= "graphviz")]
 impl<IP:Ip, K:IpPrefix<IP>, V>  crate::DotWriter for LCTrie<IP,K,V>
 {
-    fn write_dot(&self, dot: &mut dyn Write) -> io::Result<()>
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
     {
         use lux::bits::BitVec;
 

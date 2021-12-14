@@ -4,61 +4,50 @@ use std::net::Ipv4Addr;
 fn main() {
 
     let prefixes = [
-        "1.1.0.0/24",
-        "1.1.1.0/24",
-        "1.1.2.0/24",
-        "1.1.3.0/24",
-        "1.1.0.0/20",
-        "1.1.0.0/19",
-        "1.2.1.0/24",
-        "2.2.1.0/24",
-        "1.3.1.0/24",
-        "2.3.1.0/20",
-        "2.1.1.0/20",
-        "1.3.1.0/20",
-        "2.3.1.0/20",
-        "1.4.1.0/24",
-        "1.5.1.0/24",
-        "1.6.1.0/24",
-        "2.2.2.0/24",
+        "45.56.0.0/18|16591",
+    "45.56.64.0/20|63949",
+    "45.56.112.0/21|63949",
+    "45.56.120.0/21|63949",
+    "45.56.132.0/22|62874",
+   "45.56.138.0/23|8100",
+    "45.56.144.0/23|62874",
+    "45.56.146.0/24|206092",
+    "45.57.0.0/17|2906",
+    "45.57.8.0/23|40027",
+    "45.57.8.0/24|40027",
+    "45.57.9.0/24|40027",
+    "45.57.40.0/23|40027",
+    "45.57.40.0/24|40027",
+    "45.57.41.0/24|40027",
+    "45.57.44.0/24|2906",
+    "45.57.45.0/24|2906",
+    "45.57.56.0/24|2906",
+    "45.57.60.0/24|2906",
+    "45.57.63.0/24|2906",
+    "45.57.68.0/24|2906",
+    "45.57.69.0/24|2906",
+    "45.57.76.0/23|40027",
+    "45.57.77.0/24|40027",
+    "45.57.90.0/23|40027",
+    "45.57.90.0/24|40027",
+    "45.57.91.0/24|40027",
+    "45.57.128.0/23|55286",
     ];
     let mut trie = IpPrefixMap::with_root(20);
 
     prefixes.iter()
-        .map(|x| x.parse::<IpPrefixLtd::<Ipv4>>().unwrap())
-        .enumerate()
-        .for_each(|(i,p)| { trie.insert(p, i*100+7);});
-
-    let addr = [
-        "1.1.1.1".parse::<Ipv4Addr>().unwrap(),
-        "1.1.1.13".parse::<Ipv4Addr>().unwrap(),
-        "1.1.1.3".parse::<Ipv4Addr>().unwrap(),
-        "1.1.2.3".parse::<Ipv4Addr>().unwrap(),
-        "1.1.3.3".parse::<Ipv4Addr>().unwrap(),
-        "1.2.2.2".parse::<Ipv4Addr>().unwrap(),
-        "1.2.1.2".parse::<Ipv4Addr>().unwrap(),
-        "1.3.2.2".parse::<Ipv4Addr>().unwrap(),
-        "1.3.1.2".parse::<Ipv4Addr>().unwrap(),
-        "1.4.2.2".parse::<Ipv4Addr>().unwrap(),
-        "1.5.1.2".parse::<Ipv4Addr>().unwrap(),
-    ];
-    addr.iter()
-        .for_each(|a| {
-            let (k,v) = trie.lookup(a);
-            println!("{} -> ({},{})", a, k, v);
+        .for_each(|x| {
+            let mut x = x.split('|');
+            let p = x.next().unwrap().parse::<IpWholePrefix<Ipv4>>().unwrap();
+            let a = x.next().unwrap().parse::<u32>().unwrap();
+            trie.insert(p,a);
         });
 
-    //trie.open_dot_view().expect("can’t open dot view");
-    println!();
-/*
+
+
+    trie.open_dot_view().expect("can’t open dot view");
+
     let trie = trie.compile();
-    addr.iter()
-        .for_each(|a| {
-            let (k,v) = trie.lookup(a);
-            println!("{} -> ({},{})", a, k, v);
-        });
-*/
-   dbg!( trie.remove(&"1.8.0.0/24".parse::<IpWholePrefix<Ipv4>>().unwrap()));
-    //trie.remove(&"1.1.0.0/20".parse::<IpWholePrefix<Ipv4>>().unwrap());
-    //trie.open_dot_view().expect("can’t open dot view");
+    trie.open_dot_view().expect("can’t open dot view");
+
 }
