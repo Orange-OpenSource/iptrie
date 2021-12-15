@@ -22,7 +22,11 @@ pub trait Ip
     fn leading_ones(&self) -> u8;
     fn first_bit(&self) -> u8;
     fn single_bit(pos: u8) -> Self;
- }
+
+    const Ipv : Ipv;
+}
+
+pub enum Ipv { V4, V6 }
 
 /// Tag to use IPv4 prefixes (/32 or /27 for ltd)
 #[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd, Hash)]
@@ -43,6 +47,8 @@ impl Ip for Ipv4 {
         debug_assert!( pos <= 32);
         Self( 1 << (32-pos))
     }
+
+    const Ipv: Ipv = Ipv::V4;
 }
 
 /// Tag to use short IPv6 prefixes (/64 or /58 for ltd)
@@ -70,6 +76,8 @@ impl Ip for Ipv6s {
         debug_assert!( pos <= 64);
         Self( 1 << (64-pos))
     }
+
+    const Ipv: Ipv = Ipv::V6;
 }
 
 /// Tag to use IPv6 prefixes (/128 or /121 for ltd)
@@ -91,6 +99,8 @@ impl Ip for Ipv6 {
         debug_assert!( pos <= 128);
         Self( 1 << (128-pos))
     }
+
+    const Ipv: Ipv = Ipv::V6;
 }
 
 
