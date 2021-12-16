@@ -51,7 +51,9 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
             l = self[b].escape;
         }
         if self[l] == addedpfx {
-            self.leaves.remove_last().map(|l| l.value)
+            let mut v = self.leaves.remove_last().unwrap().value;
+            std::mem::swap(&mut v, &mut self.leaves[l].value);
+            Some(v)
         } else {
             self.branching.insert_prefix(addedleaf, &addedpfx.slot(), addedpfx.len(),
                                          deepestbranching, deepestleaf,
