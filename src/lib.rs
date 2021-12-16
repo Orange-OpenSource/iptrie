@@ -10,6 +10,7 @@ pub use ip::*;
 use crate::patricia::*;
 use crate::lctrie::*;
 
+
 #[cfg(feature = "graphviz")] mod graphviz;
 #[cfg(feature = "graphviz")] pub use graphviz::DotWriter;
 #[cfg(feature = "graphviz")] use std::io;
@@ -168,3 +169,12 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixCompiledMap<IP,K,V>
     #[inline]
     pub fn info(&self) { self.0.info() }
 }
+
+pub type IpWholePrefixMap<IP,V> = IpPrefixMap<IP,IpWholePrefix<IP>,V>;
+pub type IpWholePrefixSet<IP> = IpPrefixSet<IP,IpWholePrefix<IP>>;
+pub type IpWholePrefixCompiledMap<IP,V> = IpPrefixCompiledMap<IP,IpWholePrefix<IP>,V>;
+
+
+pub type IpPrefixLtdMap<IP,V> = IpPrefixMap<IP,IpPrefixLtd<IP>,V>;
+pub type IpPrefixLtdSet<IP> = IpPrefixSet<IP,IpPrefixLtd<IP>>;
+pub type IpPrefixLtdCompiledMap<IP,V> = IpPrefixCompiledMap<IP,IpPrefixLtd<IP>,V>;
