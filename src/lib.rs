@@ -143,10 +143,10 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     }
 }
 
-pub struct IpPrefixCompiledMap<IP:Ip,K:IpPrefix<IP>,V>(LCTrie<IP,K,V>);
+pub struct IpPrefixLCMap<IP:Ip,K:IpPrefix<IP>,V>(LCTrie<IP,K,V>);
 
 
-impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixCompiledMap<IP,K,V>
+impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixLCMap<IP,K,V>
 {
     #[inline]
     pub fn new(trie: IpPrefixMap<IP,K,V>) -> Self { Self(LCTrie::new(trie.0)) }
@@ -170,11 +170,35 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixCompiledMap<IP,K,V>
     pub fn info(&self) { self.0.info() }
 }
 
+
+pub struct IpPrefixLCSet<IP:Ip,K:IpPrefix<IP>>(LCTrie<IP,K,()>);
+
+impl <IP:Ip, K:IpPrefix<IP>> IpPrefixLCSet<IP,K>
+{
+    #[inline]
+    pub fn new(trie: IpPrefixSet<IP,K>) -> Self { Self(LCTrie::new(trie.0)) }
+
+    #[inline]
+    pub fn contains<P: IpPrefix<IP>>(&self, k: &P) -> bool
+    {
+        self.0.get(k).is_some()
+    }
+
+    #[inline]
+    pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> &K
+    {
+        &self.0.lookup(k).0
+    }
+}
+
+
 pub type IpWholePrefixMap<IP,V> = IpPrefixMap<IP,IpWholePrefix<IP>,V>;
 pub type IpWholePrefixSet<IP> = IpPrefixSet<IP,IpWholePrefix<IP>>;
-pub type IpWholePrefixCompiledMap<IP,V> = IpPrefixCompiledMap<IP,IpWholePrefix<IP>,V>;
+pub type IpWholePrefixLCMap<IP,V> = IpPrefixLCMap<IP,IpWholePrefix<IP>,V>;
+pub type IpWholePrefixLCSet<IP> = IpPrefixLCSet<IP,IpWholePrefix<IP>>;
 
 
 pub type IpPrefixLtdMap<IP,V> = IpPrefixMap<IP,IpPrefixLtd<IP>,V>;
 pub type IpPrefixLtdSet<IP> = IpPrefixSet<IP,IpPrefixLtd<IP>>;
-pub type IpPrefixLtdCompiledMap<IP,V> = IpPrefixCompiledMap<IP,IpPrefixLtd<IP>,V>;
+pub type IpPrefixLtdLCMap<IP,V> = IpPrefixLCMap<IP,IpPrefixLtd<IP>,V>;
+pub type IpPrefixLtdLCSet<IP> = IpPrefixLCSet<IP,IpPrefixLtd<IP>>;
