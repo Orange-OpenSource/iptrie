@@ -100,6 +100,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> graphviz::DotWriter for IpPrefixMap<IP,K,V>
     }
 }
 
+#[derive(Clone)]
 pub struct IpPrefixSet<IP:Ip,K:IpPrefix<IP>>(RadixTrie<IP,K,()>);
 
 impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>

@@ -15,7 +15,7 @@ type Ipv4Prefix = IpWholePrefix<Ipv4>;
 type Ipv6Prefix = IpWholePrefix<Ipv6>;
 
 fn main() {
-    let handle = io::BufWriter::new(io::stdout());
+    let mut handle = io::BufWriter::new(io::stdout());
 
     let filename = env::args().skip(1).next().expect("needs a LPM file");
     let file = File::open(filename).expect("can’t open LPM file");
@@ -50,9 +50,9 @@ fn main() {
     let map4 = map4.compile();
     let map6 = map6.compile();
    // map6.generate_graphviz_file("a".into());
-    map4.info();
-    map6.info();
-    std::process::exit(0);
+    //map4.info();
+   // map6.info();
+    //std::process::exit(0);
     loop {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {

@@ -1,8 +1,8 @@
 [package]
 name = "iptrie"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Xophe <christophe.dousson@orange.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "IPv4/v6 addresses and prefixes lookup structures and algorithms"
 repository = "https://github.com/Orange-OpenSource/rust-iptrie"
