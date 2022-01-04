@@ -48,6 +48,11 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     pub fn drain(&mut self) -> impl Iterator + '_ {
         self.0.leaves.0.drain(1..).map(|l| l.prefix )
     }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator + '_ {
+        self.0.leaves.0.iter().skip(1).map(|l| &l.prefix )
+    }
 }
 
 

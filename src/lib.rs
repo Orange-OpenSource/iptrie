@@ -13,8 +13,7 @@ mod set;
 pub use map::{IpPrefixMap,IpPrefixLCMap};
 pub use set::{IpPrefixSet,IpPrefixLCSet};
 
-pub use ip::{Ip,Ipv4,Ipv6,Ipv6s};
-pub use ip::{IpPrefix,IpPrefixMatch,IpWholePrefix,IpPrefixLtd};
+pub use ip::*;
 
 pub type IpWholePrefixMap<IP,V> = IpPrefixMap<IP,IpWholePrefix<IP>,V>;
 pub type IpWholePrefixSet<IP> = IpPrefixSet<IP,IpWholePrefix<IP>>;

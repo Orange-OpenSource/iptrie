@@ -74,6 +74,11 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
         unimplemented!();
         self.0.leaves.0.drain_filter(move |l| (pred)(&l.prefix,&mut l.value))
     }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator + '_ {
+        self.0.leaves.0.iter().skip(1)
+    }
 }
 
 impl<IP:Ip,K:IpPrefix<IP>,V> Extend<(K,V)> for IpPrefixMap<IP,K,V>
