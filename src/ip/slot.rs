@@ -23,7 +23,7 @@ pub trait Ip
     fn first_bit(&self) -> u8;
     fn single_bit(pos: u8) -> Self;
 
-    const Ipv : Ipv;
+    const IP_VERSION: Ipv;
 }
 
 pub enum Ipv { V4, V6 }
@@ -48,7 +48,7 @@ impl Ip for Ipv4 {
         Self( 1 << (32-pos))
     }
 
-    const Ipv: Ipv = Ipv::V4;
+    const IP_VERSION: Ipv = Ipv::V4;
 }
 
 /// Tag to use short IPv6 prefixes (/64 or /58 for ltd)
@@ -77,7 +77,7 @@ impl Ip for Ipv6s {
         Self( 1 << (64-pos))
     }
 
-    const Ipv: Ipv = Ipv::V6;
+    const IP_VERSION: Ipv = Ipv::V6;
 }
 
 /// Tag to use IPv6 prefixes (/128 or /121 for ltd)
@@ -100,7 +100,7 @@ impl Ip for Ipv6 {
         Self( 1 << (128-pos))
     }
 
-    const Ipv: Ipv = Ipv::V6;
+    const IP_VERSION: Ipv = Ipv::V6;
 }
 
 

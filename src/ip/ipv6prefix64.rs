@@ -1,4 +1,4 @@
-use crate::{Ipv6s, IpPrefix, IpPrefixMatch, IpMask, Ip};
+use crate::ip::{Ipv6s, IpPrefix, IpPrefixMatch, IpMask, Ip};
 use std::fmt::{Debug, Formatter, Display};
 use std::str::FromStr;
 use crate::ip::error::PrefixError;

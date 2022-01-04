@@ -44,10 +44,11 @@ fn main() {
         });
 
 
-
+    #[cfg(feature = "graphviz")]
     trie.open_dot_view().expect("can’t open dot view");
 
     let trie = trie.compile();
+    #[cfg(feature = "graphviz")]
     trie.open_dot_view().expect("can’t open dot view");
 
 }
