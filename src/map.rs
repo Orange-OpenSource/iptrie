@@ -76,8 +76,8 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator + '_ {
-        self.0.leaves.0.iter().skip(1)
+    pub fn iter(&self) -> impl Iterator<Item=(&K,&V)> + '_ {
+        self.0.leaves.0.iter().skip(1).map(|x| (&x.prefix,&x.value))
     }
 }
 
