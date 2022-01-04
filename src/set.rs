@@ -3,7 +3,7 @@ use crate::patricia::*;
 use crate::lctrie::*;
 
 
-#[cfg(feature = "graphviz")] pub use graphviz::DotWriter;
+#[cfg(feature = "graphviz")] pub use crate::graphviz::DotWriter;
 #[cfg(feature = "graphviz")] use std::io;
 
 #[derive(Clone)]

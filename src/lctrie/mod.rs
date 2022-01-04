@@ -270,7 +270,7 @@ impl<IP:Ip, K:IpPrefix<IP>, V> IndexMut<BranchingIndex> for LCTrie<IP,K,V>
 
 
 #[cfg(feature= "graphviz")]
-impl<IP:Ip, K:IpPrefix<IP>, V>  crate::DotWriter for LCTrie<IP,K,V>
+impl<IP:Ip, K:IpPrefix<IP>, V>  crate::graphviz::DotWriter for LCTrie<IP,K,V>
 {
     fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
     {
