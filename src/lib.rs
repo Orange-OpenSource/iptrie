@@ -8,7 +8,7 @@ mod lctrie;
 mod map;
 mod set;
 
-#[cfg(feature = "graphviz")] mod graphviz;
+#[cfg(feature = "graphviz")] pub mod graphviz;
 
 pub use map::{IpPrefixMap,IpPrefixLCMap};
 pub use set::{IpPrefixSet,IpPrefixLCSet};
