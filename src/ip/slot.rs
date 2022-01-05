@@ -34,8 +34,8 @@ impl Display for Ipv
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Ipv::V4 => "Ipv4".fmt(f),
-            Ipv::V6 => "Ipv6".fmt(f)
+            Ipv::V4 => write!(f,"Ipv4"),
+            Ipv::V6 => write!(f,"Ipv6"),
         }
     }
 }
