@@ -55,6 +55,13 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     }
 }
 
+#[cfg(feature= "graphviz")]
+impl<IP:Ip,K:IpPrefix<IP>> crate::graphviz::DotWriter for IpPrefixSet<IP,K>
+{
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()> {
+        self.0.write_dot(dot)
+    }
+}
 
 pub struct IpPrefixLCSet<IP:Ip,K:IpPrefix<IP>>(LCTrie<IP,K,()>);
 

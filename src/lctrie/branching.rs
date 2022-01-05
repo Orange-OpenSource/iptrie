@@ -92,7 +92,8 @@ impl<IP:Ip> CompressedTree<IP> {
     pub fn with_capacity(n: usize) -> Self
     {
         let mut memzone = Vec::new();
-        memzone.resize(n * (2 * size_of::<Compressed<IP>>() / size_of::<NodeIndex>()), NodeIndex::root());
+        // todo: (n+1) ou n ?? ou autre chose ? comment est-ce calculé ?
+        memzone.resize((n+1) * (2 * size_of::<Compressed<IP>>() / size_of::<NodeIndex>()), NodeIndex::root());
         unsafe { memzone.set_len(0) };
         Self {
             memzone,
