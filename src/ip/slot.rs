@@ -1,6 +1,7 @@
 use std::str::FromStr;
 use std::ops::*;
 use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hash;
 use crate::ip::{IpPrefix,IpPrefixMatch};
 
@@ -27,6 +28,17 @@ pub trait Ip
 }
 
 pub enum Ipv { V4, V6 }
+
+impl Display for Ipv
+{
+    #[inline]
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Ipv::V4 => "Ipv4".fmt(f),
+            Ipv::V6 => "Ipv6".fmt(f)
+        }
+    }
+}
 
 /// Tag to use IPv4 prefixes (/32 or /27 for ltd)
 #[derive(Copy, Clone, Eq, PartialEq, Default, Debug, Ord, PartialOrd, Hash)]
