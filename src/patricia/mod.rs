@@ -30,6 +30,18 @@ impl<IP:Ip, K:IpPrefix<IP>, V> RadixTrie<IP,K,V>
         }
     }
 
+    pub fn map<W,F:FnMut(&V)->W>(&self, mut f:F) -> RadixTrie<IP,K,W>
+    {
+        RadixTrie {
+            branching: self.branching.clone(),
+            leaves: TrieLeaves(
+                self.leaves.0.iter()
+                    .map(|leaf| Leaf::new(leaf.prefix.clone(), f(&leaf.value)))
+                    .collect()
+            ),
+            phantom: Default::default()
+        }
+    }
 
     #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V>

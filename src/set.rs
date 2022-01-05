@@ -7,7 +7,7 @@ use crate::lctrie::*;
 #[cfg(feature = "graphviz")] use std::io;
 
 #[derive(Clone)]
-pub struct IpPrefixSet<IP:Ip,K:IpPrefix<IP>>(RadixTrie<IP,K,()>);
+pub struct IpPrefixSet<IP:Ip,K:IpPrefix<IP>>(pub(crate) RadixTrie<IP,K,()>);
 
 impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
 {
