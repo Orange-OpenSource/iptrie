@@ -15,6 +15,9 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     pub fn new() -> Self { Self::with_capacity(1000) }
 
     #[inline]
+    pub fn len(&self) -> usize { self.0.leaves.len() }
+
+    #[inline]
     pub fn compile(self) -> LCTrie<IP,K,()> { LCTrie::new(self.0) }
 
     #[inline]
