@@ -48,7 +48,7 @@ impl<T:Ip> Shr<u8> for BitIndex<T> {
     #[inline]
     fn shr(self, rhs: u8) -> Self::Output {
         //debug_assert!( self.0 as usize + rhs as usize <= 8 * std::mem::size_of::<T>());
-        BitIndex( unsafe { self.0.unchecked_add(rhs) }, self.1)
+        BitIndex( self.0+rhs, self.1)
     }
 }
 
@@ -57,7 +57,7 @@ impl<T:Ip> Shl<u8> for BitIndex<T> {
     #[inline]
     fn shl(self, rhs: u8) -> Self::Output {
         debug_assert!( self.0 > rhs );
-        BitIndex( unsafe { self.0.unchecked_sub(rhs) }, self.1)
+        BitIndex( self.0 - rhs , self.1)
     }
 }
 

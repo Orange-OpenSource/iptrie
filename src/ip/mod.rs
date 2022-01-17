@@ -16,7 +16,7 @@ pub use matching::*;
 pub use whole::*;
 pub use ipv6prefix64::Ipv6Prefix64;
 
-use error::PrefixError;
+pub use error::PrefixError;
 
 
 /// Trait for IP prefix mask
