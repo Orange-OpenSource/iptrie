@@ -1,4 +1,4 @@
-mod ip;
+pub mod ip;
 mod trie;
 mod patricia;
 mod lctrie;
@@ -10,7 +10,7 @@ mod set;
 pub use map::{IpPrefixMap,IpPrefixLCMap};
 pub use set::{IpPrefixSet,IpPrefixLCSet};
 
-pub use crate::ip::{Ip,Ipv4,Ipv6,IpPrefixLtd,IpWholePrefix};
+pub use crate::ip::{Ip,Ipv4,Ipv6,IpPrefixLtd,IpWholePrefix,Ipv,IpPrefixMatch};
 
 pub type Ipv4Prefix = IpWholePrefix<Ipv4>;
 pub type Ipv6Prefix = IpWholePrefix<Ipv6>;
