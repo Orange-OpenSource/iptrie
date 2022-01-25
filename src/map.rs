@@ -64,7 +64,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
     pub fn lookup_mut<Q: IpPrefixMatch<IP>>(&mut self, k: &Q) -> (&K, &mut V) { self.0.lookup_mut(k) }
 
     #[inline]
-    pub fn drain(&mut self) -> impl Iterator + '_ {
+    pub fn drain(&mut self) -> impl Iterator<Item=(K,V)> + '_ {
         self.0.leaves.0.drain(1..).map(|l| (l.prefix,l.value))
     }
 /*
