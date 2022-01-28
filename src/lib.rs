@@ -1,5 +1,5 @@
-use std::net::{Ipv4Addr, Ipv6Addr};
-use ipnet::{Ipv4Net, Ipv6Net};
+pub use std::net::{Ipv4Addr, Ipv6Addr};
+pub use ipnet::{Ipv4Net, Ipv6Net};
 use crate::trie::common::BitPrefix;
 
 mod trie;
@@ -8,7 +8,6 @@ mod set;
 
 pub use map::*;
 pub use set::*;
-
 
 impl BitPrefix for Ipv4Addr {
     type Slot = u32;
