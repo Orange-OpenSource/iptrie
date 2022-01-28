@@ -1,10 +1,10 @@
-pub use std::net::{Ipv4Addr, Ipv6Addr};
-pub use ipnet::{Ipv4Net, Ipv6Net};
-use crate::trie::common::BitPrefix;
-
 mod trie;
 mod map;
 mod set;
+
+pub use std::net::{Ipv4Addr, Ipv6Addr};
+pub use ipnet::{Ipv4Net, Ipv6Net};
+pub use crate::trie::common::BitPrefix;
 
 pub use map::*;
 pub use set::*;
