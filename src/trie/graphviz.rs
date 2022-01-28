@@ -1,12 +1,15 @@
 #![cfg(feature= "graphviz")]
 
+//! This module is only dedicated to produce graphviz representation
+//! of the tries for debugging purpose.
+//!
 use std::io;
 use std::io::Write;
 use std::process::{Stdio, Command};
 use std::fs::File;
 use std::path::PathBuf;
 
-static DOTCMD : &str = "dot";
+const DOTCMD : &str = "dot";
 
 pub trait DotWriter {
 

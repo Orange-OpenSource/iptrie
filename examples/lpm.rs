@@ -1,6 +1,4 @@
 use std::{env, io};
-use iptrie::*;
-use std::net::{Ipv4Addr, Ipv6Addr};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::null_mut;
@@ -8,11 +6,14 @@ use std::fs::File;
 use std::os::unix::io::AsRawFd;
 use std::io::Write;
 
+use iptrie::*;
+
+use std::net::{Ipv4Addr, Ipv6Addr};
+use ipnet::{Ipv4Net,Ipv6Net};
+
 // should be "end of line" (\n) terminated
 static EMPTY_PREFIX: &str = "<empty prefix>\n";
 
-type Ipv4Prefix = IpWholePrefix<Ipv4>;
-type Ipv6Prefix = IpWholePrefix<Ipv6>;
 
 fn main() {
     let mut handle = io::BufWriter::new(io::stdout());
@@ -29,17 +30,17 @@ fn main() {
     }
     let lpmfile = unsafe { std::str::from_utf8(CStr::from_ptr(lpmfile).to_bytes()) }.unwrap();
 
-    let mut map4 = IpPrefixMap::<Ipv4,Ipv4Prefix,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
-    let mut map6 = IpPrefixMap::<Ipv6,Ipv6Prefix,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
+    let mut map4 = RTrieMap::<Ipv4Net,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
+    let mut map6 = RTrieMap::<Ipv6Net,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
 
     lpmfile.split_inclusive('\n').into_iter()
        // .take(100)
         .filter(|s| !s.is_empty() && !s.starts_with('#'))// skip empty and comment lines
         .map(|s| (s, s.split_ascii_whitespace().into_iter().next().expect("bad formatted line")))
         .for_each(| (line, prefix) | {
-            if let Ok(pfx) = prefix.parse::<Ipv4Prefix>() {
+            if let Ok(pfx) = prefix.parse::<Ipv4Net>() {
                 map4.insert(pfx, line);
-            } else if let Ok(pfx) = prefix.parse::<Ipv6Prefix>() {
+            } else if let Ok(pfx) = prefix.parse::<Ipv6Net>() {
                 map6.insert(pfx, line);
             } else {
                 eprintln!("WARN: skip bad formatted line: {}", line);
@@ -47,8 +48,8 @@ fn main() {
         });
 
     //map4.open_dot_view();
-    let map4 = map4.compile();
-    let map6 = map6.compile();
+    let map4 = map4.compress();
+    let map6 = map6.compress();
    // map6.generate_graphviz_file("a".into());
     //map4.info();
    // map6.info();
