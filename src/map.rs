@@ -89,7 +89,7 @@ impl <K:BitPrefix,V> RTrieMap<K,V>
 
 impl<K:BitPrefix,V> Extend<(K,V)> for RTrieMap<K,V>
 {
-    fn extend<T: IntoIterator<Item=(K, V)>>(&mut self, iter: T)
+    fn extend<T: IntoIterator<Item=(K,V)>>(&mut self, iter: T)
     {
         iter.into_iter().for_each(|(k,v)| {self.insert(k,v);})
     }
@@ -142,7 +142,3 @@ impl<K:BitPrefix,V>  DotWriter for LCTrieMap<K,V>
         self.0.write_dot(dot)
     }
 }
-
-
-
-
