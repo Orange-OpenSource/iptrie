@@ -1,15 +1,18 @@
-use crate::ip::{Ip, IpPrefix, IpPrefixMatch};
-use crate::patricia::*;
-use crate::lctrie::*;
+use std::fmt::Debug;
+pub use std::net::Ipv4Addr;
+pub use ipnet::Ipv4Net;
+
+use crate::trie::common::{BitPrefix, BitSlot};
+use crate::trie::patricia::RadixTrie;
+use crate::trie::lctrie::LCTrie;
 
 
-#[cfg(feature = "graphviz")] pub use crate::graphviz::DotWriter;
-#[cfg(feature = "graphviz")] use std::io;
 
 #[derive(Clone)]
-pub struct IpPrefixSet<IP:Ip,K:IpPrefix<IP>>(pub(crate) RadixTrie<IP,K,()>);
+pub struct RTrieSet<P:BitPrefix>(pub(crate) RadixTrie<P,()>);
 
-impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
+
+impl<P:BitPrefix> RTrieSet<P>
 {
     #[inline]
     pub fn new() -> Self { Self::with_capacity(1000) }
@@ -18,32 +21,31 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     pub fn len(&self) -> usize { self.0.leaves.len() }
 
     #[inline]
-    pub fn compile(self) -> LCTrie<IP,K,()> { LCTrie::new(self.0) }
+    pub fn compress(self) -> LCTrieSet<P> { LCTrieSet(LCTrie::new(self.0)) }
 
     #[inline]
     pub fn with_capacity(capacity:usize) -> Self { Self(RadixTrie::new((), capacity)) }
 
     #[inline]
-    pub fn insert(&mut self, k: K) -> bool
+    pub fn insert(&mut self, k: P) -> bool
     {
         self.0.insert(k,()).is_none()
     }
 
     #[inline]
-    pub fn contains<P: IpPrefix<IP>>(&self, k: &P) -> bool
+    pub fn contains<Q: BitPrefix<Slot=P::Slot>>(&self, k: &Q) -> bool
     {
         self.0.get(k).is_some()
     }
 
     #[inline]
-    pub fn remove<P: IpPrefix<IP>>(&mut self, k: &P) -> bool
+    pub fn remove<Q: BitPrefix<Slot=P::Slot>>(&mut self, k: &Q) -> bool
     {
         self.0.remove(k).is_some()
     }
 
     #[inline]
-    pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> &K
-    {
+    pub fn lookup<Q:BitPrefix<Slot=P::Slot>>(&self, k: &Q) -> &P {
         &self.0.lookup(k).0
     }
 
@@ -58,31 +60,44 @@ impl <IP:Ip, K:IpPrefix<IP>> IpPrefixSet<IP,K>
     }
 }
 
+
+pub struct LCTrieSet<P:BitPrefix>(LCTrie<P,()>);
+
+impl <P:BitPrefix> LCTrieSet<P>
+{
+
+    #[inline]
+    pub fn contains<Q:BitPrefix<Slot=P::Slot>>(&self, k: &Q) -> bool
+    {
+        self.0.get(k).is_some()
+    }
+
+    #[inline]
+    pub fn lookup<Q:BitPrefix<Slot=P::Slot>>(&self, k: &Q) -> &P
+    {
+        &self.0.lookup(k).0
+    }
+}
+
+
+#[cfg(feature = "graphviz")] pub use crate::trie::graphviz::DotWriter;
+#[cfg(feature = "graphviz")] use std::io;
+
 #[cfg(feature= "graphviz")]
-impl<IP:Ip,K:IpPrefix<IP>> crate::graphviz::DotWriter for IpPrefixSet<IP,K>
+impl<P:BitPrefix> DotWriter for RTrieSet<P>
+    where P: std::fmt::Display
 {
     fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()> {
         self.0.write_dot(dot)
     }
 }
 
-pub struct IpPrefixLCSet<IP:Ip,K:IpPrefix<IP>>(LCTrie<IP,K,()>);
-
-impl <IP:Ip, K:IpPrefix<IP>> IpPrefixLCSet<IP,K>
+#[cfg(feature= "graphviz")]
+impl<P:BitPrefix> DotWriter for LCTrieSet<P>
+    where P: std::fmt::Display
 {
-    #[inline]
-    pub fn new(trie: IpPrefixSet<IP,K>) -> Self { Self(LCTrie::new(trie.0)) }
-
-    #[inline]
-    pub fn contains<P: IpPrefix<IP>>(&self, k: &P) -> bool
-    {
-        self.0.get(k).is_some()
-    }
-
-    #[inline]
-    pub fn lookup<Q: IpPrefixMatch<IP>>(&self, k: &Q) -> &K
-    {
-        &self.0.lookup(k).0
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()> {
+        self.0.write_dot(dot)
     }
 }
 

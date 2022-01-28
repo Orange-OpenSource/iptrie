@@ -1,6 +1,6 @@
 [package]
 name = "iptrie"
-version = "0.3.9"
+version = "0.4.0"
 authors = ["Xophe <christophe.dousson@orange.com>"]
 edition = "2021"
 license = "MIT"
@@ -10,6 +10,7 @@ keywords = ["ip","trie"]
 categories = ["data-structures", "algorithms"]
 
 [dependencies]
+ipnet = { version = "2" }
 lux =  { git = "https://tess7:hmMiKbdt139v9vWAtifZ@gitlab.tech.orange/tess7/framework.git", optional = true }
 
 [dev-dependencies]

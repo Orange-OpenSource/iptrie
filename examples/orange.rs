@@ -1,5 +1,6 @@
 use iptrie::*;
 use std::net::Ipv4Addr;
+use ipnet::Ipv4Net;
 
 fn main() {
 
@@ -29,26 +30,20 @@ fn main() {
     "45.57.76.0/23|40027",
     "45.57.77.0/24|40027",
     "45.57.90.0/23|40027",
-    "45.57.90.0/24|40027",
     "45.57.91.0/24|40027",
     "45.57.128.0/23|55286",
     ];
-    let mut trie = IpPrefixMap::with_root(20);
+    let mut trie = RTrieSet::new();
 
     prefixes.iter()
         .for_each(|x| {
             let mut x = x.split('|');
-            let p = x.next().unwrap().parse::<IpWholePrefix<Ipv4>>().unwrap();
+            let p = x.next().unwrap().parse::<Ipv4Net>().unwrap();
             let a = x.next().unwrap().parse::<u32>().unwrap();
-            trie.insert(p,a);
+            trie.insert(dbg!(p));
         });
 
-
-    #[cfg(feature = "graphviz")]
     trie.open_dot_view().expect("can’t open dot view");
-
-    let trie = trie.compile();
-    #[cfg(feature = "graphviz")]
-    trie.open_dot_view().expect("can’t open dot view");
+    trie.compress().open_dot_view().expect("can’t open dot view");
 
 }

@@ -1,33 +1,253 @@
+
+
+#[cfg(feature= "graphviz")] use std::io;
 use std::ops::{Index, IndexMut};
-use std::marker::PhantomData;
 
 use crate::trie::*;
-use crate::ip::*;
-use super::bits::*;
+pub(crate) use super::common::*;
+
+#[derive(Clone)]
+pub(crate) struct RadixTrie<K:BitPrefix, V>
+{
+    pub(crate) branching: BranchingTree,
+    pub(crate) leaves: TrieLeaves<Leaf<K,V>>
+}
+
+impl<K:BitPrefix, V> RadixTrie<K,V>
+{
+    pub(crate) fn new(value: V, capacity: usize) -> Self
+    {
+        Self {
+            branching: BranchingTree::new(capacity.clone() / 2),
+            leaves: TrieLeaves::new(capacity, K::root(),value)
+        }
+    }
+
+    pub fn map<W,F:FnMut(&V)->W>(&self, mut f:F) -> RadixTrie<K,W>
+    {
+        RadixTrie {
+            branching: self.branching.clone(),
+            leaves: TrieLeaves(
+                self.leaves.0.iter()
+                    .map(|leaf| Leaf::new(leaf.prefix.clone(), f(&leaf.value)))
+                    .collect()
+            )
+        }
+    }
+
+    #[inline]
+    pub fn insert(&mut self, k: K, v: V) -> Option<V>
+    {
+        let addedleaf = self.leaves.push(Leaf::new(k, v));
+        let addedpfx = self[addedleaf].clone();
+
+        let (deepestbranching, deepestleaf) = self.branching.search_deepest_candidate(&addedpfx.bitslot());
+        let mut l = deepestleaf;
+        let mut b = deepestbranching;
+        if l != self[b].escape {
+            if !self[l].overlaps(&addedpfx) {
+                l = self[b].escape;
+            }
+        }
+        while !self[l].overlaps(&addedpfx) {
+            assert!(!l.is_root_leaf());
+            b = self[b].parent;
+            l = self[b].escape;
+        }
+        if self[l] == addedpfx {
+            let mut v = self.leaves.remove_last().unwrap().value;
+            std::mem::swap(&mut v, &mut self.leaves[l].value);
+            Some(v)
+        } else {
+            self.branching.insert_prefix(addedleaf, &addedpfx.bitslot(), addedpfx.len(),
+                                         deepestbranching, deepestleaf,
+                                         &self[deepestleaf].bitslot(), self[deepestleaf].len());
+            None
+        }
+    }
+
+    #[inline]
+    pub fn get<P: BitPrefix<Slot=K::Slot>>(&self, k: &P) -> Option<&V>
+    {
+        let (_,l) = self.inner_lookup(k);
+        if k.len() == self[l].len() { Some(&self.leaves[l].value) } else { None }
+    }
+
+    #[inline]
+    pub fn get_mut<P: BitPrefix<Slot=K::Slot>>(&mut self, k: &P) -> Option<&mut V>
+    {
+        let (_,l) = self.inner_lookup(k);
+        if k.len() == self[l].len() { Some(&mut self.leaves[l].value) } else { None }
+    }
+
+    #[inline]
+    pub fn remove<P: BitPrefix<Slot=K::Slot>>(&mut self, k: &P) -> Option<V>
+    {
+        let (mut b,l) = self.inner_lookup(k);
+        if k.len() != self[l].len() {
+            None
+        } else {
+            if l == self[b].escape {
+                // the node to suppress is an escape node
+                // so we should climb to its first appearance
+                while self[self[b].parent].escape == l {
+                    b = self[b].parent;
+                }
+                // and we propagate the removal (i.e. the escape change)
+                self.branching.replace_escape_leaf(b, l, self[self[b].parent].escape);
+            } else {
+                // we suppress a leaf of the tree... so easy... (redirect to escape)
+                *self[b].child_mut(&k.bitslot()) = self[b].escape.into();
+            }
+
+            // todo: some branching possibly becomes useless and should be removed here
+
+            // reindex the leaf which will be swapped with the removed one
+            let lastleaf = LeafIndex::from(self.leaves.len()-1);
+            let (mut bb,_ll) = self.inner_lookup(&self[lastleaf].bitslot());
+            debug_assert_eq!( self[lastleaf].len(), self[_ll].len() );
+            if self[bb].child[0] == lastleaf { self[bb].child[0] = l.into(); }
+            if self[bb].child[1] == lastleaf { self[bb].child[1] = l.into(); }
+            while self[bb].escape == lastleaf {
+                self[bb].escape = l;
+                bb = self[bb].parent; // climb up the escape chain
+            }
+            // effective removal of the leaf
+            Some(self.leaves.0.swap_remove(l.index()).value)
+        }
+    }
+
+    #[inline]
+    fn inner_lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (BranchingIndex, LeafIndex)
+    {
+        let (mut n, mut l) = self.branching.search_deepest_candidate(&k.bitslot());
+
+        if l != self[n].escape {
+            if self[l].overlaps(k) { return (n,l); }
+            l = self[n].escape;
+        }
+        while !self[l].overlaps(k) {
+            debug_assert!( !l.is_root_leaf() );
+            n = self[n].parent;
+            l = self[n].escape;
+        }
+        (n,l)
+    }
+
+
+    #[inline]
+    pub fn lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (&K, &V)
+    {
+        let (_,l) = self.inner_lookup(k);
+        let result = &self.leaves[l];
+        return (&result.prefix, &result.value)
+    }
+
+    #[inline]
+    pub fn lookup_mut<Q: BitPrefix<Slot=K::Slot>>(&mut self, k: &Q) -> (&K, &mut V)
+    {
+        let (_,l) = self.inner_lookup(k);
+        let result = &mut self.leaves[l];
+        return (&result.prefix, &mut result.value)
+    }
+}
+
+
+#[cfg(feature= "graphviz")]
+impl<K:BitPrefix, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
+    where K: std::fmt::Display
+{
+    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
+    {
+        writeln!(dot, "digraph patricia {{")?;
+        writeln!(dot, "    rankdir=LR")?;
+
+        // writing branching nodes
+        writeln!(dot, "node[shape=box]")?;
+        self.branching.0.iter()
+            .enumerate()
+            .try_for_each(|(i,b)|
+                writeln!(dot, "{0} [label=\"[{0}] bit={1}\n[{2:?}] {3}\"]", i, b.bit, b.escape, self[b.escape])
+            )?;
+        // display the relevant leaves (i.e. not escaped)
+        writeln!(dot, "node[shape=none]")?;
+        self.branching.0.iter()
+            .try_for_each(|b|
+                b.child.iter()
+                    .filter(|&c| *c != b.escape && c.is_leaf())
+                    .try_for_each(|c|
+                        writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", c, self[c.as_leaf()])
+                    ))?;
+
+        writeln!(dot, "edge[headport=w,colorscheme=dark28]")?;
+        self.branching.0.iter()
+            .enumerate()
+            .try_for_each(|(i, b)|
+                b.child.iter()
+                    .enumerate()
+                    .filter(|(_, &c)| c != b.escape) // avoid redundant link
+                    .try_for_each(|(j, _)|
+                        writeln!(dot, "{0} -> {1:?} [fontcolor={2},color={2},label={3}]", i, b.child[j], j+1, j)
+                    )
+            )?;
+
+        writeln!(dot,"}}")?;
+        dot.flush()
+    }
+}
+
+
+impl<K:BitPrefix,V> Index<BranchingIndex> for RadixTrie<K,V>
+{
+    type Output = Branching;
+    #[inline]
+    fn index(&self, i: BranchingIndex) -> &Self::Output { &self.branching[i] }
+}
+
+impl<K:BitPrefix,V> IndexMut<BranchingIndex> for RadixTrie<K,V>
+{
+    #[inline]
+    fn index_mut(&mut self, i: BranchingIndex) -> &mut Self::Output { &mut self.branching[i] }
+}
+
+impl<K:BitPrefix,V> Index<LeafIndex> for RadixTrie<K,V>
+{
+    type Output = K;
+    #[inline]
+    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix }
+}
+
+impl<K:BitPrefix,V> IndexMut<LeafIndex> for RadixTrie<K,V>
+{
+    #[inline]
+    fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output { &mut self.leaves[i].prefix }
+}
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct Branching<T:Ip, B:BitMatch<T>> {
+pub(crate) struct Branching {
     pub(crate) escape: LeafIndex, // leaf associated to this branching node
     pub(crate) parent: BranchingIndex, // to climb up the trie (>=0)
     pub(crate) child: [NodeIndex;2], // negative if leaf, positive if branching
-    pub(crate) bit: B, // position of the relevant bit
-    ip: PhantomData<T>
+    pub(crate) bit: u8, // position of the relevant bit
 }
 
-impl<T:Ip,B:BitMatch<T>> Branching<T,B> {
+impl Branching {
 
-    fn child(&self, slot:&T) -> NodeIndex {
-        if self.bit.is_set(slot) { self.child[1] } else { self.child[0] }
+    #[inline]
+    fn child<B:BitSlot>(&self, slot:&B) -> NodeIndex {
+        if slot.is_set(self.bit) { self.child[1] } else { self.child[0] }
     }
 
-    pub(crate) fn child_mut(&mut self, slot:&T) -> &mut NodeIndex {
-        if self.bit.is_set(slot) { &mut self.child[1] } else { &mut self.child[0] }
+    #[inline]
+    pub(crate) fn child_mut<B:BitSlot>(&mut self, slot:&B) -> &mut NodeIndex {
+        if slot.is_set(self.bit) { &mut self.child[1] } else { &mut self.child[0] }
     }
 }
+
 #[derive(Clone)]
-pub(crate) struct BranchingTree<T:Ip, B:BitMatch<T>>(pub(crate) Vec<Branching<T,B>>);
+pub(crate) struct BranchingTree(pub(crate) Vec<Branching>);
 
-impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
+impl BranchingTree
 {
     pub fn new(capacity: usize) -> Self
     {
@@ -36,38 +256,40 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
             escape: LeafIndex::root_leaf(),
             parent: BranchingIndex::root(),
             child: [LeafIndex::root_leaf().into(); 2],
-            bit: 1.into(),
-            ip: PhantomData::default()
+            bit: 1,
         });
         Self(branching)
     }
 
     // returns the index of the added node
-    pub fn push(&mut self, parent: BranchingIndex, escape: LeafIndex, bit: B) -> BranchingIndex {
+    pub fn push(&mut self, parent: BranchingIndex, escape: LeafIndex, bit: u8) -> BranchingIndex
+    {
         let index = self.0.len().into();
         self.0.push(Branching {
             escape,
             parent,
             child: [escape.into(); 2],
             bit,
-            ip: Default::default()
         });
         index
     }
 
+    #[inline]
     pub fn remove_last(&mut self)
     {
         debug_assert!(self.0.len() > 1);
         self.0.pop();
     }
 
+    #[inline]
     pub fn remove(&mut self, i: BranchingIndex)
     {
         debug_assert!(!i.is_root());
         self.0.swap_remove(i.index());
     }
 
-    pub fn search_deepest_candidate(&self, slot: &T) -> (BranchingIndex, LeafIndex)
+    #[inline]
+    pub fn search_deepest_candidate<B:BitSlot>(&self, slot: &B) -> (BranchingIndex, LeafIndex)
     {
         let mut b = BranchingIndex::root();
         loop {
@@ -126,7 +348,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
         // NOTE : ca rebelote potentiellement les pointeurs...
         // DONC apres un appel a insertSuffixBranching, on ne peut se fier a aucun poiteur
         */
-    pub fn insert_prefix_branching(&mut self, n: BranchingIndex, e: LeafIndex, x: NodeIndex, p: B, slot: &T) -> BranchingIndex
+    pub fn insert_prefix_branching<B:BitSlot>(&mut self, n: BranchingIndex, e: LeafIndex, x: NodeIndex, p: u8, slot: &B) -> BranchingIndex
     {
         debug_assert!(self[n].bit < p);
         let nn = self.push(n, e, p);
@@ -148,18 +370,18 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
     /*
      * REQUIREMENT: le prefixe ajoute n'est pas deja present dans le trie
      */
-    pub fn insert_prefix(&mut self,
-                         addedindex: LeafIndex, addedslot: &T, addedlen: u8,
-                         mut n: BranchingIndex,
-                         deepestindex: LeafIndex, deepestslot: &T, deepestlen: u8)
+    pub fn insert_prefix<B:BitSlot>(&mut self,
+                                    addedindex: LeafIndex, addedslot: &B, addedlen: u8,
+                                    mut n: BranchingIndex,
+                                    deepestindex: LeafIndex, deepestslot: &B, deepestlen: u8)
     {
         // attention, cette feuille peut etre plus profonde que le prefixe insere
         // mais le fait de faire un xor verifie egalement la comparaison (sauf la longueur
         // qu'il faudra comparer ensuite).
-        let cmp = *addedslot ^ *deepestslot;
+        let cmp:B = *addedslot ^ *deepestslot;
 
         // position discriminante du noeud de branchement du nouveau prefixe
-        let pos = B::from_first_bit(cmp);
+        let pos = cmp.first_bit();
 
         if (pos > deepestlen.into()) && (deepestlen < addedlen) {
             // tout se joue au dela du prefixe le plus long dans le trie
@@ -210,7 +432,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
 
     // this is the number of suppressed branching if compression is done
     // note: this node is counted also
-    pub(crate) fn count_compressed_branching(&self, b: &Branching<T,B>, p: B, stop: LeafIndex) -> usize
+    pub(crate) fn count_compressed_branching(&self, b: &Branching, p: u8, stop: LeafIndex) -> usize
     {
         b.child
             .iter()
@@ -225,7 +447,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
             )
     }
 
-    fn compression_level_max(&self, b: &Branching<T,B>, max: u8, stop: LeafIndex) -> u8
+    fn compression_level_max(&self, b: &Branching, max: u8, stop: LeafIndex) -> u8
     {
         if max == 0 { return 0; }
 
@@ -251,13 +473,13 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
         }
     }
 
-    pub(crate) fn compression_level(&self, b: &Branching<T,B>, comp: u8 ) -> u8
+    pub(crate) fn compression_level(&self, b: &Branching, comp: u8 ) -> u8
     {
         let compression_max = self.compression_level_max(b, 15, b.escape);
         match (1..compression_max).into_iter()
             .try_fold((0u8,0),
                       |(compression_level, compressed_children), j| {
-                          let cc = self.count_compressed_branching(b, b.bit >> j, b.escape);
+                          let cc = self.count_compressed_branching(b, b.bit + j, b.escape);
                           if cc < (1<<j)/(1<<comp)/2 {
                               Err(compression_level) // on ne trouvera pas mieux...
                           } else if cc > compressed_children {
@@ -275,9 +497,9 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
 }
 
 
-impl<T:Ip, B:BitMatch<T>> Index<BranchingIndex> for BranchingTree<T,B>
+impl Index<BranchingIndex> for BranchingTree
 {
-    type Output = Branching<T,B>;
+    type Output = Branching;
 
     #[inline]
     fn index(&self, i: BranchingIndex) -> &Self::Output
@@ -287,7 +509,7 @@ impl<T:Ip, B:BitMatch<T>> Index<BranchingIndex> for BranchingTree<T,B>
     }
 }
 
-impl<T:Ip, B:BitMatch<T>> IndexMut<BranchingIndex> for BranchingTree<T,B>
+impl IndexMut<BranchingIndex> for BranchingTree
 {
     #[inline]
     fn index_mut(&mut self, i: BranchingIndex) -> &mut Self::Output
@@ -298,9 +520,9 @@ impl<T:Ip, B:BitMatch<T>> IndexMut<BranchingIndex> for BranchingTree<T,B>
 }
 
 
-impl<T:Ip, B:BitMatch<T>> Index<NodeIndex> for BranchingTree<T,B>
+impl Index<NodeIndex> for BranchingTree
 {
-    type Output = Branching<T,B>;
+    type Output = Branching;
 
     fn index(&self, i: NodeIndex) -> &Self::Output
     {
@@ -311,7 +533,7 @@ impl<T:Ip, B:BitMatch<T>> Index<NodeIndex> for BranchingTree<T,B>
     }
 }
 
-impl<T:Ip, B:BitMatch<T>> IndexMut<NodeIndex> for BranchingTree<T,B>
+impl IndexMut<NodeIndex> for BranchingTree
 {
     fn index_mut(&mut self, i: NodeIndex) -> &mut Self::Output
     {
