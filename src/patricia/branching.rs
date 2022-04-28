@@ -255,7 +255,7 @@ impl<T:Ip,B:BitMatch<T>> BranchingTree<T,B>
     {
         let compression_max = self.compression_level_max(b, 15, b.escape);
         match (1..compression_max).into_iter()
-            .try_fold((0u8,0),
+            .try_fold((0u8, self.count_compressed_branching(b, b.bit, b.escape)),
                       |(compression_level, compressed_children), j| {
                           let cc = self.count_compressed_branching(b, b.bit >> j, b.escape);
                           if cc < (1<<j)/(1<<comp)/2 {
