@@ -65,6 +65,7 @@ impl<IP:Ip,K:IpPrefix<IP>,V> IpPrefixMap<IP,K,V>
 
     #[inline]
     pub fn drain(&mut self) -> impl Iterator<Item=(K,V)> + '_ {
+        self.0.branching.clear();
         self.0.leaves.0.drain(1..).map(|l| (l.prefix,l.value))
     }
 /*
