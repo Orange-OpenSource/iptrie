@@ -261,6 +261,17 @@ impl BranchingTree
         Self(branching)
     }
 
+    pub fn clear(&mut self)
+    {
+        self.0.clear();
+        self.0.push(Branching {
+            escape: LeafIndex::root_leaf(),
+            parent: BranchingIndex::root(),
+            child: [LeafIndex::root_leaf().into(); 2],
+            bit: 1
+        });
+    }
+
     // returns the index of the added node
     pub fn push(&mut self, parent: BranchingIndex, escape: LeafIndex, bit: u8) -> BranchingIndex
     {

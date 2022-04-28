@@ -63,16 +63,9 @@ impl <K:BitPrefix,V> RTrieMap<K,V>
 
     #[inline]
     pub fn drain(&mut self) -> impl Iterator<Item=(K,V)> + '_ {
+        self.0.branching.clear();
         self.0.leaves.0.drain(1..).map(|l| (l.prefix,l.value))
     }
-    /*
-        #[inline]
-        pub fn drain_filter<'a,F>(&'a mut self, mut pred: F) -> impl Iterator + 'a
-            where F: 'a + FnMut(&K, &mut V) -> bool
-        {
-            unimplemented!();
-            self.0.leaves.0.drain_filter(move |l| (pred)(&l.prefix,&mut l.value))
-        }*/
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item=(&K,&V)> + '_ {
