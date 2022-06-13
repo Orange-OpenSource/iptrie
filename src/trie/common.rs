@@ -72,6 +72,7 @@ pub trait BitPrefix: fmt::Debug+Clone+Eq
 
     fn root() -> Self; // root prefix, of len =0
 
+    /// Should be truncated
     fn bitslot(&self) -> Self::Slot;
 
     /// Gets the number of significant bits
