@@ -72,23 +72,10 @@ pub trait BitPrefix: fmt::Debug+Clone+Eq
 
     fn root() -> Self; // root prefix, of len =0
 
-    /// Should be truncated
     fn bitslot(&self) -> Self::Slot;
 
     /// Gets the number of significant bits
     fn len(&self) -> u8;
-
-    /// Gets the bitmask of this prefix
-    #[inline]
-    fn bitmask(&self) -> Self::Slot {
-        <<Self as BitPrefix>::Slot as BitSlot>::bitmask(self.len())
-    }
-
-    /// Checks if this prefix overlaps another one.
-    #[inline]
-    fn overlaps<P: BitPrefix<Slot=Self::Slot>>(&self, prefix: &P) -> bool {
-        prefix.bitslot() & self.bitmask() == self.bitslot() && self.len() <= prefix.len()
-    }
 }
 
 

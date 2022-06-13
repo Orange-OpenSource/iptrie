@@ -8,6 +8,7 @@ use super::*;
 use super::patricia::*;
 
 #[cfg(feature= "graphviz")] use std::io;
+use crate::{bitmask, bitslot_trunc, covers};
 
 pub(crate) struct LCTrie<K:BitPrefix, V> {
     branching: CompressedTree,
@@ -90,11 +91,11 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
             // mais attention, il se peut qu'il y ait une «pile» d'escape a tester
             let shft = K::Slot::LEN - c.shift - c.size;
             let mut mattch = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
-            let mut child = (self[thechild].bitmask() >> shft).as_u16() & currchild;
+            let mut child = (bitmask(&self[thechild]) >> shft).as_u16() & currchild;
             while mattch != child {
                 thechild = tree[b].escape;
                 mattch = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
-                child = (self[thechild].bitmask() >> shft).as_u16() & child;
+                child = (bitmask(&self[thechild]) >> shft).as_u16() & child;
                 b = tree[b].parent;
             }
             *self[current].child_mut(currchild) = thechild.into();
@@ -133,7 +134,7 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
             }
         }
         let leaf = &self.leaves[l];
-        if leaf.prefix.bitslot() == k.bitslot() && leaf.prefix.len() == k.len() {
+        if bitslot_trunc(&leaf.prefix) == bitslot_trunc(k) && leaf.prefix.len() == k.len() {
             Some(&leaf.value)
         } else {
             None
@@ -154,7 +155,7 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
                 }
             }
         }        let leaf = &mut self.leaves[l];
-        if leaf.prefix.bitslot() == k.bitslot() && leaf.prefix.len() == k.len() {
+        if bitslot_trunc(&leaf.prefix) == bitslot_trunc(k) && leaf.prefix.len() == k.len() {
             Some(&mut leaf.value)
         } else {
             None
@@ -193,12 +194,12 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
         }
         let mut bb = &self[b];
         if l != bb.escape {
-            if self[l].overlaps(k) {
+            if covers(&self[l], k) {
                 return l;
             }
             l = bb.escape;
         }
-        while !self[l].overlaps(k) {
+        while !covers(&self[l],k) {
             b = bb.parent;
             bb = &self[b];
             l = bb.escape;

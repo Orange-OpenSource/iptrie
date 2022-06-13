@@ -2,6 +2,7 @@
 
 #[cfg(feature= "graphviz")] use std::io;
 use std::ops::{Index, IndexMut};
+use crate::covers;
 
 use crate::trie::*;
 pub(crate) use super::common::*;
@@ -45,11 +46,11 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
         let mut l = deepestleaf;
         let mut b = deepestbranching;
         if l != self[b].escape {
-            if !self[l].overlaps(&addedpfx) {
+            if !covers(&self[l], &addedpfx) {
                 l = self[b].escape;
             }
         }
-        while !self[l].overlaps(&addedpfx) {
+        while !covers(&self[l],&addedpfx) {
             assert!(!l.is_root_leaf());
             b = self[b].parent;
             l = self[b].escape;
@@ -123,10 +124,10 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
         let (mut n, mut l) = self.branching.search_deepest_candidate(&k.bitslot());
 
         if l != self[n].escape {
-            if self[l].overlaps(k) { return (n,l); }
+            if covers(&self[l], k) { return (n,l); }
             l = self[n].escape;
         }
-        while !self[l].overlaps(k) {
+        while !covers(&self[l], k) {
             debug_assert!( !l.is_root_leaf() );
             n = self[n].parent;
             l = self[n].escape;
