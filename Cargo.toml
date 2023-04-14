@@ -1,6 +1,6 @@
 [package]
 name = "iptrie"
-version = "0.5.0"
+version = "0.5.2"
 authors = ["Xophe <christophe.dousson@orange.com>"]
 edition = "2021"
 license = "MIT"

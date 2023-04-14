@@ -14,7 +14,7 @@ impl BitPrefix for Ipv4Addr {
     type Slot = u32;
     #[inline] fn root() -> Self { Ipv4Addr::new(0,0,0,0)  }
     #[inline] fn bitslot(&self) -> Self::Slot { u32::from(*self) }
-    #[inline] fn len(&self) -> u8 { if self.is_unspecified() {0} else {32} }
+    #[inline] fn len(&self) -> u8 { 32 }
 }
 
 impl BitPrefix for Ipv4Net {
@@ -29,7 +29,7 @@ impl BitPrefix for Ipv6Addr {
     type Slot = u128;
     #[inline] fn root() -> Self { Ipv6Addr::new(0,0,0,0,0,0,0,0) }
     #[inline] fn bitslot(&self) -> Self::Slot { u128::from(*self) }
-    #[inline] fn len(&self) -> u8 { if self.is_unspecified() {0} else {128} }
+    #[inline] fn len(&self) -> u8 { 128 }
 }
 
 impl BitPrefix for Ipv6Net {
