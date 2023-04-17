@@ -34,6 +34,8 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
         lctrie
     }
 
+    pub fn len(&self) -> usize { self.leaves.len() }
+
     fn skip_redundant_parent(&mut self, b:BranchingIndex, esc: LeafIndex, up: BranchingIndex)
     {
         (0..self[b].children())

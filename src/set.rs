@@ -65,6 +65,8 @@ pub struct LCTrieSet<P:BitPrefix>(LCTrie<P,()>);
 
 impl <P:BitPrefix> LCTrieSet<P>
 {
+    #[inline]
+    pub fn len(&self) -> usize { self.0.len() }
 
     #[inline]
     pub fn contains<Q:BitPrefix<Slot=P::Slot>>(&self, k: &Q) -> bool

@@ -128,8 +128,6 @@ impl<L> TrieLeaves<L>
     }
 
     pub fn len(&self) -> usize { self.0.len() }
-
-
 }
 
 

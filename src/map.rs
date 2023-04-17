@@ -95,6 +95,9 @@ pub struct LCTrieMap<K:BitPrefix,V>(LCTrie<K,V>);
 impl<K:BitPrefix,V> LCTrieMap<K,V>
 {
     #[inline]
+    pub fn len(&self) -> usize { self.0.len() }
+
+    #[inline]
     pub fn get<Q:BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> Option<&V> { self.0.get(k) }
 
     #[inline]
