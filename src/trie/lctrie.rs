@@ -1,18 +1,15 @@
 use std::fmt;
-use std::fmt::Display;
 use std::mem::size_of;
 use std::ops::{Index, IndexMut};
 
 use super::common::BitSlot;
-use super::*;
 use super::patricia::*;
 
-#[cfg(feature= "graphviz")] use std::io;
 use crate::{bitmask, bitslot_trunc, covers};
 
 pub(crate) struct LCTrie<K:BitPrefix, V> {
     branching: CompressedTree,
-    leaves: TrieLeaves<Leaf<K,V>>
+    pub(crate) leaves: TrieLeaves<Leaf<K,V>>
 }
 
 impl<K:BitPrefix,V>  LCTrie<K,V> {
@@ -34,12 +31,24 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
         lctrie
     }
 
+
+    pub fn map<W,F:FnMut(&V)->W>(&self, mut f:F) -> LCTrie<K,W>
+    {
+        LCTrie {
+            branching: self.branching.clone(),
+            leaves: TrieLeaves(
+                self.leaves.0.iter()
+                    .map(|leaf| Leaf::new(leaf.prefix, f(&leaf.value)))
+                    .collect()
+            )
+        }
+    }
+
     pub fn len(&self) -> usize { self.leaves.len() }
 
     fn skip_redundant_parent(&mut self, b:BranchingIndex, esc: LeafIndex, up: BranchingIndex)
     {
         (0..self[b].children())
-            .into_iter()
             .for_each(|i| {
                 if self[b].child(i).is_branching() {
                     let bb = BranchingIndex::from(*self[b].child(i));
@@ -62,15 +71,15 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
                 -> BranchingIndex
     {
         let compression = tree.compression_level(&tree[b], comp);
-        let shift : u8 = tree[b].bit.into();
+        let shift : u8 = tree[b].bit;
         let current = self.branching.push(parent, tree[b].escape,  shift - 1, compression + 1);
         done[b.index()] = current.into();
         let bb = &mut self[current];
-        (0..bb.children()).into_iter()
-            .for_each(|i| self.compute_compressed_child(&tree, current, i, 1, b, b, done, comp));
+        (0..bb.children()).for_each(|i| self.compute_compressed_child(tree, current, i, 1, b, b, done, comp));
         current
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn compute_compressed_child(&mut self,
                                 tree: &BranchingTree,
                                 current : BranchingIndex, // the compressed node index (in the LC-trie)
@@ -85,19 +94,19 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
         debug_assert_eq!( tree[start].escape , tree[b].escape );
 
         let c = &self[current];
-        let thechild = if currchild & (1 << (c.size - depth)) == 0 { tree[b].child[0]} else { tree[b].child[1] };
+        let thechild = if currchild & (1 << (c.size - depth)) == 0 { tree[b].child[0] } else { tree[b].child[1] };
         if thechild.is_leaf() {
             let mut thechild = LeafIndex::from(thechild);
             // il faut tester si le prefixe de la feuille est correct sinon ce sera escape
             // on ne teste que sur les bits identifiant le fils (les autres sont ok)
             // mais attention, il se peut qu'il y ait une «pile» d'escape a tester
             let shft = K::Slot::LEN - c.shift - c.size;
-            let mut mattch = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
+            let mut matching = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
             let mut child = (bitmask(&self[thechild]) >> shft).as_u16() & currchild;
-            while mattch != child {
+            while matching != child {
                 thechild = tree[b].escape;
-                mattch = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
-                child = (bitmask(&self[thechild]) >> shft).as_u16() & child;
+                matching = (self[thechild].bitslot() >> shft).as_u16() & c.mask;
+                child &= (bitmask(&self[thechild]) >> shft).as_u16();
                 b = tree[b].parent;
             }
             *self[current].child_mut(currchild) = thechild.into();
@@ -107,12 +116,12 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
                 // cas on tombe sur un noeud de branchement deja compresse...
                 *self[current].child_mut(currchild) = n.into();
             } else {
-                let mut depth = tree[thechild].bit.into();
+                let mut depth = tree[thechild].bit;
                 depth -= c.shift;
                 if depth > c.size {
                     // ce fils est au dela du niveau de compression en cours...
                     // on passe donc a un nouveau noeud de branchement compresse
-                    *self[current].child_mut(currchild)  = self.compress(tree, thechild.into(), current, done, comp).into();
+                    *self[current].child_mut(currchild)  = self.compress(tree, thechild, current, done, comp).into();
                 } else {
                     //assert (start.escape == trie.branching[thechild].escape);
                     self.compute_compressed_child(tree, current, currchild, depth, start, thechild, done, comp);
@@ -125,7 +134,7 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
     pub fn get<P: BitPrefix<Slot=K::Slot>>(&self, k: &P) -> Option<&V>
     {
         let mut b = BranchingIndex::root();
-        let mut l = LeafIndex::root_leaf();
+        let l: LeafIndex; // = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.bitslot()) {
                 n if n.is_branching() => b = (*n).into(),
@@ -147,7 +156,7 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
     pub fn get_mut<P: BitPrefix<Slot=K::Slot>>(&mut self, k: &P) -> Option<&mut V>
     {
         let mut b = BranchingIndex::root();
-        let mut l = LeafIndex::root_leaf();
+        let l : LeafIndex; // = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.bitslot()) {
                 n if n.is_branching() => b = (*n).into(),
@@ -165,26 +174,26 @@ impl<K:BitPrefix,V>  LCTrie<K,V> {
     }
 
     #[inline]
-    pub fn lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (&K, &V)
+    pub fn lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (K, &V)
     {
         let l = self.inner_lookup(k);
         let result = &self.leaves[l];
-        return (&result.prefix, &result.value)
+        (result.prefix, &result.value)
     }
 
     #[inline]
-    pub fn lookup_mut<Q: BitPrefix<Slot=K::Slot>>(&mut self, k: &Q) -> (&K, &mut V)
+    pub fn lookup_mut<Q: BitPrefix<Slot=K::Slot>>(&mut self, k: &Q) -> (K, &mut V)
     {
         let l = self.inner_lookup(k);
         let result = &mut self.leaves[l];
-        return (&result.prefix, &mut result.value)
+        (result.prefix, &mut result.value)
     }
 
     #[inline]
     fn inner_lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> LeafIndex
     {
         let mut b = BranchingIndex::root();
-        let mut l = LeafIndex::root_leaf();
+        let mut l : LeafIndex; // = LeafIndex::root_leaf();
         loop {
             match self[b].lookup(&k.bitslot()) {
                 n if n.is_branching() => b = (*n).into(),
@@ -289,7 +298,7 @@ impl fmt::Debug for Compressed
         writeln!(f, "Compressed<...> node")?;
         writeln!(f, "  - shift:{}, size:{}, bitmask:{:b}", self.shift, self.size, self.mask)?;
         writeln!(f, "  - escape leaf:{:?}, parent:{:?}", self.escape, self.parent)?;
-        (0..self.children()).into_iter()
+        (0..self.children())
             .try_for_each(|i| writeln!(f, "   - child[{}]: {:?}", i, self.child(i)))
     }
 }
@@ -311,7 +320,7 @@ impl Compressed {
     pub(crate) fn children(&self) -> u16 { 1 << self.size }
 
     fn letter<B:BitSlot>(&self, slot:&B) -> u16 {
-        let slot : u16 = (*slot >> (B::LEN-self.clone().shift-self.clone().size)).as_u16();
+        let slot : u16 = (*slot >> (B::LEN-self.shift-self.size)).as_u16();
         self.mask & slot
     }
 
@@ -343,7 +352,7 @@ impl Compressed {
     }
 }
 
-
+#[derive(Clone)]
 pub(crate) struct CompressedTree {
     memzone: Vec<NodeIndex>
 }
@@ -367,13 +376,13 @@ impl CompressedTree {
         unsafe { self.memzone.set_len( self.memzone.len() + Compressed::offset(1<<size)); }
 
         self[index] = Compressed::new(shift, size, escape, parent);
-        (0..self[index].children()).into_iter()
+        (0..self[index].children())
             .for_each(|i| *self[index].child_mut(i) = self[index].escape.into());
         index
     }
 
 
-    pub(crate) fn iter<'a>(&'a self) -> BranchingIterator<'a>
+    pub(crate) fn iter(&self) -> BranchingIterator<'_>
     {
         BranchingIterator {
             curs: 0,
@@ -423,7 +432,7 @@ impl<'a> Iterator for BranchingIterator<'a>
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.curs < self.tree.memzone.len() {
-            let n: BranchingIndex = self.curs.clone().into();
+            let n: BranchingIndex = self.curs.into();
             let node = &self.tree[n];
             self.curs += Compressed::offset(node.children());
             Some((n,node))
@@ -436,11 +445,11 @@ impl<'a> Iterator for BranchingIterator<'a>
 
 #[cfg(feature= "graphviz")]
 impl<K:BitPrefix, V> crate::trie::graphviz::DotWriter for LCTrie<K,V>
-    where K:Display
+    where K: std::fmt::Display
 {
-    fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
+    fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()>
     {
-        use lux::bits::BitVec;
+        use std::collections::BTreeSet;
 
         writeln!(dot, "digraph lctrie {{")?;
         writeln!(dot, "    rankdir=LR")?;
@@ -465,18 +474,19 @@ impl<K:BitPrefix, V> crate::trie::graphviz::DotWriter for LCTrie<K,V>
         writeln!(dot, "node[shape=none]")?;
         self.branching.iter()
             .try_for_each(|(i,b)| {
-                let mut done = BitVec::new();
+                let mut done = BTreeSet::<u32>::default();;
                 (0..b.children()).into_iter()
                     .try_for_each(|c|
-                        if !done[c as u32] && *b.child(c) != b.escape {
+                        if !done.contains(&(c as u32)) && *b.child(c) != b.escape {
                             let group = ((c+1)..b.children()).into_iter()
                                 .filter(|cc| b.child(c) == b.child(*cc))
-                                .fold(BitVec::singleton(c as u32), |mut group, cc| { group.set(cc as u32); group } );
-                            done |= &group;
+                                .fold(BTreeSet::from_iter([c as u32;1]), |mut group, cc| { group.insert(cc as u32); group } );
+                            let label = group.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(",");
+                            done.extend(group);
                             if b.child(c).is_leaf() {
                                 writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", b.child(c), self[LeafIndex::from(*b.child(c))])?;
                             }
-                            writeln!(dot, "{0:?} -> {1:?} [fontcolor={2},color={2},label=\"{3}\"]", i, b.child(c), 1+(c%8), group)
+                            writeln!(dot, "{0:?} -> {1:?} [fontcolor={2},color={2},label=\"{3}\"]", i, b.child(c), 1+(c%8), label)
                         } else { Ok(()) })
             })?;
 

@@ -16,6 +16,7 @@ static EMPTY_PREFIX: &str = "<empty prefix>\n";
 
 
 fn main() {
+
     let mut handle = io::BufWriter::new(io::stdout());
 
     let filename = env::args().skip(1).next().expect("needs a LPM file");
@@ -30,8 +31,8 @@ fn main() {
     }
     let lpmfile = unsafe { std::str::from_utf8(CStr::from_ptr(lpmfile).to_bytes()) }.unwrap();
 
-    let mut map4 = RTrieMap::<Ipv4Net,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
-    let mut map6 = RTrieMap::<Ipv6Net,&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
+    let mut map4 = Ipv4RTrieMap::<&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
+    let mut map6 = Ipv6RTrieMap::<&str>::with_root_and_capacity(EMPTY_PREFIX, 2000000);
 
     lpmfile.split_inclusive('\n').into_iter()
        // .take(100)
@@ -47,9 +48,11 @@ fn main() {
             }
         });
 
+
     //map4.open_dot_view();
     let map4 = map4.compress();
     let map6 = map6.compress();
+
    // map6.generate_graphviz_file("a".into());
     //map4.info();
    // map6.info();
@@ -61,9 +64,9 @@ fn main() {
             Ok(_) => {
                 let input = &input[..(input.len()-1)];
                 if let Ok(addr) = input.parse::<Ipv4Addr>() {
-                    handle.write_all(map4.lookup(&addr).1.as_bytes()).unwrap();
+                    handle.write_all(map4.lookup(addr).1.as_bytes()).unwrap();
                 } else if let Ok(addr) = input.parse::<Ipv6Addr>() {
-                    handle.write_all(map6.lookup(&addr).1.as_bytes()).unwrap();
+                    handle.write_all(map6.lookup(addr).1.as_bytes()).unwrap();
                 } else {
                     eprintln!("WARN: can’t parse '{}' (not an IP address)", input);
                 }

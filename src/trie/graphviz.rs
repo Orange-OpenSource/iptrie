@@ -11,10 +11,15 @@ use std::path::PathBuf;
 
 const DOTCMD : &str = "dot";
 
+/// Display the inner structure of tries (require `dot` and the activation of feature __graphviz__).
 pub trait DotWriter {
 
+    /// Writes the trie structure in dot format
     fn write_dot(&self, dot: &mut dyn Write) -> io::Result<()>;
 
+    /// Generates the trie structure in a pdf file using `dot` command.
+    ///
+    /// Panics if the `dot` command was not found.
     fn generate_pdf_file(&self, file: Option<&str>) -> io::Result<()>
     {
         let child = match file {
@@ -44,6 +49,10 @@ pub trait DotWriter {
         self.write_dot(&mut dot)
     }
 
+    /// Prints the trie structure in graphviz format.
+    ///
+    /// If a file name is specified, the graphviz file is generated.
+    /// If not, the output is redirected to standard output.
     fn generate_graphviz_file(&self, file: Option<&str>) -> io::Result<()>
     {
         match file {
@@ -61,6 +70,7 @@ pub trait DotWriter {
         }
     }
 
+    #[doc(hidden)]
     #[cfg(target_os = "macos")]
     fn open_dot_view(&self) -> io::Result<()>
     {

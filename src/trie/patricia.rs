@@ -4,7 +4,6 @@
 use std::ops::{Index, IndexMut};
 use crate::covers;
 
-use crate::trie::*;
 pub(crate) use super::common::*;
 
 #[derive(Clone)]
@@ -19,7 +18,7 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
     pub(crate) fn new(value: V, capacity: usize) -> Self
     {
         Self {
-            branching: BranchingTree::new(capacity.clone() / 2),
+            branching: BranchingTree::new(capacity / 2),
             leaves: TrieLeaves::new(capacity, K::root(),value)
         }
     }
@@ -30,7 +29,7 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
             branching: self.branching.clone(),
             leaves: TrieLeaves(
                 self.leaves.0.iter()
-                    .map(|leaf| Leaf::new(leaf.prefix.clone(), f(&leaf.value)))
+                    .map(|leaf| Leaf::new(leaf.prefix, f(&leaf.value)))
                     .collect()
             )
         }
@@ -40,15 +39,13 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
     pub fn insert(&mut self, k: K, v: V) -> Option<V>
     {
         let addedleaf = self.leaves.push(Leaf::new(k, v));
-        let addedpfx = self[addedleaf].clone();
+        let addedpfx = self[addedleaf];
 
         let (deepestbranching, deepestleaf) = self.branching.search_deepest_candidate(&addedpfx.bitslot());
         let mut l = deepestleaf;
         let mut b = deepestbranching;
-        if l != self[b].escape {
-            if !covers(&self[l], &addedpfx) {
-                l = self[b].escape;
-            }
+        if l != self[b].escape && !covers(&self[l], &addedpfx) {
+            l = self[b].escape;
         }
         while !covers(&self[l],&addedpfx) {
             assert!(!l.is_root_leaf());
@@ -68,21 +65,21 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
     }
 
     #[inline]
-    pub fn get<P: BitPrefix<Slot=K::Slot>>(&self, k: &P) -> Option<&V>
+    pub fn get(&self, k: &K) -> Option<&V>
     {
         let (_,l) = self.inner_lookup(k);
         if k.len() == self[l].len() { Some(&self.leaves[l].value) } else { None }
     }
 
     #[inline]
-    pub fn get_mut<P: BitPrefix<Slot=K::Slot>>(&mut self, k: &P) -> Option<&mut V>
+    pub fn get_mut(&mut self, k: &K) -> Option<&mut V>
     {
         let (_,l) = self.inner_lookup(k);
         if k.len() == self[l].len() { Some(&mut self.leaves[l].value) } else { None }
     }
 
     #[inline]
-    pub fn remove<P: BitPrefix<Slot=K::Slot>>(&mut self, k: &P) -> Option<V>
+    pub fn remove(&mut self, k: &K) -> Option<V>
     {
         let (mut b,l) = self.inner_lookup(k);
         if k.len() != self[l].len() {
@@ -105,7 +102,7 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
 
             // reindex the leaf which will be swapped with the removed one
             let lastleaf = LeafIndex::from(self.leaves.len()-1);
-            let (mut bb,_ll) = self.inner_lookup(&self[lastleaf].bitslot());
+            let (mut bb,_ll) = self.inner_lookup(&self[lastleaf]);
             debug_assert_eq!( self[lastleaf].len(), self[_ll].len() );
             if self[bb].child[0] == lastleaf { self[bb].child[0] = l.into(); }
             if self[bb].child[1] == lastleaf { self[bb].child[1] = l.into(); }
@@ -119,7 +116,7 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
     }
 
     #[inline]
-    fn inner_lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (BranchingIndex, LeafIndex)
+    fn inner_lookup(&self, k: &K) -> (BranchingIndex, LeafIndex)
     {
         let (mut n, mut l) = self.branching.search_deepest_candidate(&k.bitslot());
 
@@ -137,19 +134,19 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
 
 
     #[inline]
-    pub fn lookup<Q: BitPrefix<Slot=K::Slot>>(&self, k: &Q) -> (&K, &V)
+    pub fn lookup(&self, k: &K) -> (K, &V)
     {
         let (_,l) = self.inner_lookup(k);
         let result = &self.leaves[l];
-        return (&result.prefix, &result.value)
+        (result.prefix, &result.value)
     }
 
     #[inline]
-    pub fn lookup_mut<Q: BitPrefix<Slot=K::Slot>>(&mut self, k: &Q) -> (&K, &mut V)
+    pub fn lookup_mut(&mut self, k: &K) -> (K, &mut V)
     {
         let (_,l) = self.inner_lookup(k);
         let result = &mut self.leaves[l];
-        return (&result.prefix, &mut result.value)
+        (result.prefix, &mut result.value)
     }
 }
 
@@ -344,11 +341,9 @@ impl BranchingTree
         for i in 0..=1 {
             let c = self[n].child[i];
             if c.is_leaf() {
-                if c == l1 { *&mut self[n].child[i] = l2.into(); }
-            } else {
-                if self[c].escape == l1 {
-                    self.replace_escape_leaf(c.into(), l1, l2);
-                }
+                if c == l1 { self[n].child[i] = l2.into(); }
+            } else if self[c].escape == l1 {
+                self.replace_escape_leaf(c.into(), l1, l2);
             }
         }
     }
@@ -376,12 +371,13 @@ impl BranchingTree
             }
         }
         *self[n].child_mut(slot) = nn.into();
-        return nn;
+        nn
     }
 
     /*
      * REQUIREMENT: le prefixe ajoute n'est pas deja present dans le trie
      */
+    #[allow(clippy::too_many_arguments)]
     pub fn insert_prefix<B:BitSlot>(&mut self,
                                     addedindex: LeafIndex, addedslot: &B, addedlen: u8,
                                     mut n: BranchingIndex,
@@ -395,29 +391,29 @@ impl BranchingTree
         // position discriminante du noeud de branchement du nouveau prefixe
         let pos = cmp.first_bit();
 
-        if (pos > deepestlen.into()) && (deepestlen < addedlen) {
+        if (pos > deepestlen) && (deepestlen < addedlen) {
             // tout se joue au dela du prefixe le plus long dans le trie
             if self[n].child(addedslot) == self[n].escape {
                 *self[n].child_mut(addedslot) = addedindex.into();
             } else {
-                self.insert_prefix_branching(n, deepestindex, addedindex.into(), (deepestlen + 1).into(), addedslot);
+                self.insert_prefix_branching(n, deepestindex, addedindex.into(), deepestlen+1, addedslot);
             }
-        } else if pos > addedlen.into() {
+        } else if pos > addedlen {
             // on sait que le deepest est plus long (il est plus long que pos donc de addedlength), donc on sait que
             // le prefixe ajoute est un prefixe de deepest (sinon pos serait plus petite)
             // reste a l'inserer s'il n'est pas deja present
             let pos = addedlen + 1;
-            while self[n].bit > pos.into() {
+            while self[n].bit > pos {
                 n = self[n].parent;
             }
 
             // ici, sauf erreur, la longueur du prefixe de b->escape n'est pas egale
             // a addedlength sinon, cela voudrait dire que le prefixe ajoute etati
-            if self[n].bit < pos.into() {
+            if self[n].bit < pos {
                 // il faut inserer un branchement avec la bonne position
-                self.insert_prefix_branching(n, addedindex, self[n].child(deepestslot), pos.into(), deepestslot);
+                self.insert_prefix_branching(n, addedindex, self[n].child(deepestslot), pos, deepestslot);
             } else {
-                debug_assert_eq!(self[n].bit, pos.into());
+                debug_assert_eq!(self[n].bit, pos);
                 self.replace_escape_leaf(n, self[n].escape, addedindex);
             }
         } else {
@@ -444,7 +440,7 @@ impl BranchingTree
 
     // this is the number of suppressed branching if compression is done
     // note: this node is counted also
-    pub(crate) fn count_compressed_branching(&self, b: &Branching, p: u8, stop: LeafIndex) -> usize
+    pub(crate) fn count_compressed_branching(&self, b: &Branching, p: u8) -> usize
     {
         b.child
             .iter()
@@ -452,7 +448,7 @@ impl BranchingTree
             .map(|c| &self[BranchingIndex::from(*c)])
             .fold(1, |count, b|
                 if b.bit <= p {
-                    count + self.count_compressed_branching(b, p, stop)
+                    count + self.count_compressed_branching(b, p)
                 } else {
                     count
                 }
@@ -475,23 +471,21 @@ impl BranchingTree
             } else {
                 1+self.compression_level_max(&self[BranchingIndex::from(b.child[0])], max-1, stop)
             }
+        } else if b.child[1].is_branching() {
+            1+self.compression_level_max(&self[BranchingIndex::from(b.child[1])], max-1, stop)
         } else {
-            if b.child[1].is_branching() {
-                1+self.compression_level_max(&self[BranchingIndex::from(b.child[1])], max-1, stop)
-            } else {
-                // two leaves... no branching
-                1
-            }
+            // two leaves... no branching
+            1
         }
     }
 
     pub(crate) fn compression_level(&self, b: &Branching, comp: u8 ) -> u8
     {
         let compression_max = self.compression_level_max(b, 15, b.escape);
-        match (1..compression_max).into_iter()
-            .try_fold((0u8, self.count_compressed_branching(b, b.bit, b.escape)),
+        match (1..compression_max)
+            .try_fold((0u8, self.count_compressed_branching(b, b.bit)),
                       |(compression_level, compressed_children), j| {
-                          let cc = self.count_compressed_branching(b, b.bit + j, b.escape);
+                          let cc = self.count_compressed_branching(b, b.bit + j);
                           if cc < (1<<j)/(1<<comp)/2 {
                               Err(compression_level) // on ne trouvera pas mieux...
                           } else if cc > compressed_children {

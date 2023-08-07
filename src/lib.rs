@@ -2,34 +2,21 @@ mod trie;
 mod map;
 mod set;
 
-pub use std::net::{Ipv4Addr, Ipv6Addr};
-pub use ipnet::{Ipv4Net, Ipv6Net};
-pub use crate::trie::common::BitPrefix;
+use ipnet::{Ipv4Net, Ipv6Net};
 
 pub use map::*;
 pub use set::*;
-use crate::trie::common::BitSlot;
 
-impl BitPrefix for Ipv4Addr {
-    type Slot = u32;
-    #[inline] fn root() -> Self { Ipv4Addr::new(0,0,0,0)  }
-    #[inline] fn bitslot(&self) -> Self::Slot { u32::from(*self) }
-    #[inline] fn len(&self) -> u8 { 32 }
-}
+#[cfg(feature = "graphviz")]
+pub use trie::graphviz::DotWriter;
+
+use crate::trie::common::{BitPrefix, BitSlot};
 
 impl BitPrefix for Ipv4Net {
     type Slot = u32;
     #[inline] fn root() -> Self { Ipv4Net::default()  }
     #[inline] fn bitslot(&self) -> Self::Slot  { u32::from(self.addr()) & u32::bitmask(self.len()) }
     #[inline] fn len(&self) -> u8 { self.prefix_len() }
-}
-
-
-impl BitPrefix for Ipv6Addr {
-    type Slot = u128;
-    #[inline] fn root() -> Self { Ipv6Addr::new(0,0,0,0,0,0,0,0) }
-    #[inline] fn bitslot(&self) -> Self::Slot { u128::from(*self) }
-    #[inline] fn len(&self) -> u8 { 128 }
 }
 
 impl BitPrefix for Ipv6Net {

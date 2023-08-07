@@ -8,7 +8,7 @@ use std::hash::Hash;
 /// (and so the tries) computations are made.
 /// As an example, `u32` or `u128` are good candidates
 /// for Ipv4 or Ipv6 prefixes.
-pub trait BitSlot
+pub(crate) trait BitSlot
 : 'static
 + Clone + Copy + Default
 + fmt::Debug + fmt::Binary
@@ -66,7 +66,8 @@ bitslot!(u128);
 
 
 /// Inner bit prefix
-pub trait BitPrefix: fmt::Debug+Clone+Eq
+#[allow(clippy::len_without_is_empty)]
+pub(crate) trait BitPrefix: fmt::Debug+Clone+Copy+Eq
 {
     type Slot: BitSlot;
 
@@ -203,7 +204,7 @@ impl From<usize> for LeafIndex
 {
     #[inline]
     fn from(i: usize) -> Self {
-        debug_assert!( i <= i );
+        debug_assert!( i <= INDEX_MAX );
         Self(!(i as i32))
     }
 }
