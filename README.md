@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/iptrie?style=flat)](https://crates.io/crates/iptrie)
 [![Crates.io](https://img.shields.io/crates/d/iptrie?style=flat)](https://crates.io/crates/iptrie)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](https://crates.io/crates/iptrie)
-[![Docs](https://img.shields.io/docsrs/iptrie)](https://docs.rs/fqdn-trie)
+[![Docs](https://img.shields.io/docsrs/iptrie)](https://docs.rs/iptrie)
 
 This crate implements tries dedicated to IP addresses and prefixes lookup.
 
