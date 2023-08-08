@@ -19,14 +19,9 @@ fn main() {
         "2.1.0.0/20",
         "2.3.0.0/20"
     ];
-    let mut trie = Ipv4RTrieSet::new();
 
-    prefixes.iter()
-        .for_each(|x| {
-            let mut x = x.split('|');
-            let p = x.next().unwrap().parse::<Ipv4Net>().unwrap();
-            trie.insert(p);
-        });
+    let iter = prefixes.iter().map(|x| x.parse::<Ipv4Net>().unwrap());
+    let mut trie = Ipv4RTrieSet::from_iter( iter);
 
     trie.generate_pdf_file(Some("simple-radixtrie.pdf")).expect("can’t generate PDF file");
     trie.compress().generate_pdf_file(Some("simple-lctrie.pdf")).expect("can’t generate PDF file");

@@ -76,7 +76,7 @@ macro_rules! triemap {
             #[inline]
             pub fn insert<K:Into<$ipnet>>(&mut self, k: K, v: V) -> Option<V>
             {
-                self.0.insert(k.into(), v)
+                self.0.insert(k.into().trunc(), v)
             }
 
             #[inline]
@@ -84,20 +84,20 @@ macro_rules! triemap {
 
             #[inline]
             pub fn get_mut<K:Into<$ipnet>>(&mut self, k: K) -> Option<&mut V> {
-                self.0.get_mut(&k.into())
+                self.0.get_mut(&k.into().trunc())
             }
 
             #[inline]
             pub fn remove<K:Into<$ipnet>>(&mut self, k: K) -> Option<V>
             {
-                self.0.remove(&k.into())
+                self.0.remove(&k.into().trunc())
             }
 
             #[inline]
-            pub fn lookup<K:Into<$ipnet>>(&self, k: K) -> ($ipnet, &V) { self.0.lookup(&k.into()) }
+            pub fn lookup<K:Into<$ipnet>>(&self, k: K) -> ($ipnet, &V) { self.0.lookup(&k.into().trunc()) }
 
             #[inline]
-            pub fn lookup_mut<K:Into<$ipnet>>(&mut self, k: K) -> ($ipnet, &mut V) { self.0.lookup_mut(&k.into()) }
+            pub fn lookup_mut<K:Into<$ipnet>>(&mut self, k: K) -> ($ipnet, &mut V) { self.0.lookup_mut(&k.into().trunc()) }
 
             #[inline]
             pub fn iter(&self) -> impl Iterator<Item=($ipnet,&V)> + '_ {

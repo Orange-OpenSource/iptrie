@@ -47,24 +47,24 @@ macro_rules! trieset {
             #[inline]
             pub fn insert<K:Into<$ipnet>>(&mut self, k: K) -> bool
             {
-                self.0.insert(k.into(),()).is_none()
+                self.0.insert(k.into().trunc(),()).is_none()
             }
 
             #[inline]
             pub fn contains<K:Into<$ipnet>>(&self, k: K) -> bool
             {
-                self.0.get(&k.into()).is_some()
+                self.0.get(&k.into().trunc()).is_some()
             }
 
             #[inline]
             pub fn remove<K:Into<$ipnet>>(&mut self, k: K) -> bool
             {
-                self.0.remove(&k.into()).is_some()
+                self.0.remove(&k.into().trunc()).is_some()
             }
 
             #[inline]
             pub fn lookup<K:Into<$ipnet>>(&self, k: K) -> $ipnet {
-                self.0.lookup(&k.into()).0
+                self.0.lookup(&k.into().trunc()).0
             }
 
             #[inline]

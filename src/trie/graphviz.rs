@@ -19,6 +19,10 @@ pub trait DotWriter {
 
     /// Generates the trie structure in a pdf file using `dot` command.
     ///
+    /// If a file name is specified, the pdf file is generated.
+    /// If not, the output is redirected to standard output.
+    ///
+    /// # Panics
     /// Panics if the `dot` command was not found.
     fn generate_pdf_file(&self, file: Option<&str>) -> io::Result<()>
     {
