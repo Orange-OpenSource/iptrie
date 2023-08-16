@@ -1,5 +1,6 @@
 use ipnet::Ipv4Net;
 use iptrie::{DotWriter, Ipv4RTrieSet};
+use iptrie::Ipv4Prefix;
 
 fn main() {
 
@@ -21,8 +22,9 @@ fn main() {
     ];
 
     let iter = prefixes.iter().map(|x| x.parse::<Ipv4Net>().unwrap());
-    let mut trie = Ipv4RTrieSet::from_iter( iter);
+    let trie = Ipv4RTrieSet::from_iter( iter.map(Ipv4Prefix::from));
 
     trie.generate_pdf_file(Some("simple-radixtrie.pdf")).expect("can’t generate PDF file");
     trie.compress().generate_pdf_file(Some("simple-lctrie.pdf")).expect("can’t generate PDF file");
+
 }

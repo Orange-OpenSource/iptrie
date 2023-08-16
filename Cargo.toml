@@ -1,6 +1,6 @@
 [package]
 name = "iptrie"
-version = "0.6.3"
+version = "0.7.0"
 authors = ["Xophe <christophe.dousson@orange.com>"]
 edition = "2021"
 license = "MIT"
@@ -10,10 +10,11 @@ keywords = ["ip","trie"]
 categories = ["data-structures", "algorithms"]
 
 [dependencies]
-ipnet = { version = "2" }
+ipnet = "2.8"
 
 [dev-dependencies]
-libc = { version = "0.2" }
+libc = "0.2"
+rand = "0.8"
 
 [profile.release]
 lto = "thin"

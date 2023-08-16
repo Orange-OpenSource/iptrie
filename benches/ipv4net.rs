@@ -3,9 +3,10 @@ extern crate test;
 
 use std::net::Ipv4Addr;
 use test::Bencher;
+use ipnet::Ipv4Net;
 use iptrie::*;
 
-fn build_ipv4_samples(n: usize) -> Vec<Ipv4Prefix>
+fn build_ipv4_samples(n: usize) -> Vec<Ipv4Net>
 {
     use rand::*;
     use rand::distributions::*;
@@ -14,7 +15,7 @@ fn build_ipv4_samples(n: usize) -> Vec<Ipv4Prefix>
     let addr = Uniform::<u32>::from(1..=(u32::MAX>>8));
     std::iter::repeat_with(|| {
         let addr = addr.sample(&mut rng) << 8;
-        Ipv4Prefix::new(addr.into(), prefix.sample(&mut rng)).unwrap()
+        Ipv4Net::new(addr.into(), prefix.sample(&mut rng)).unwrap()
     }).take(n).collect()
 }
 
@@ -28,7 +29,7 @@ fn build_ipv4_addr(n: usize) -> Vec<Ipv4Addr>
     std::iter::repeat_with(|| Ipv4Addr::from(addr.sample(&mut rng))).take(n).collect()
 }
 
-fn build_one_ipv4_trie() -> Ipv4RTrieSet
+fn build_one_ipv4_trie() -> RTrieSet<Ipv4Net>
 {
     let n = 1_000_000;
     build_ipv4_samples(n).into_iter().collect()

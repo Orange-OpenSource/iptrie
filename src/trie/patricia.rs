@@ -1,29 +1,52 @@
 
 
 #[cfg(feature= "graphviz")] use std::io;
+use std::num::NonZeroUsize;
 use std::ops::{Index, IndexMut};
-use crate::covers;
+use crate::prefix::*;
 
 pub(crate) use super::common::*;
 
 #[derive(Clone)]
-pub(crate) struct RadixTrie<K:BitPrefix, V>
+pub(crate) struct RadixTrie<K,V>
 {
     pub(crate) branching: BranchingTree,
     pub(crate) leaves: TrieLeaves<Leaf<K,V>>
 }
 
-impl<K:BitPrefix, V> RadixTrie<K,V>
+impl<K,V> RadixTrie<K,V>
+{
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item=&Leaf<K,V>> + '_ {
+        self.leaves.0.iter()
+    }
+
+    #[inline]
+    pub fn drain(&mut self) -> impl Iterator<Item=Leaf<K,V>> + '_ {
+        self.leaves.0.drain(..)
+    }
+
+    #[inline]
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> NonZeroUsize {
+        unsafe {
+            NonZeroUsize::new_unchecked(self.leaves.len())
+        }
+    }
+
+}
+
+impl<K:IpPrefix,V> RadixTrie<K,V>
 {
     pub(crate) fn new(value: V, capacity: usize) -> Self
     {
         Self {
             branching: BranchingTree::new(capacity / 2),
-            leaves: TrieLeaves::new(capacity, K::root(),value)
+            leaves: TrieLeaves::new(capacity, K::root(), value)
         }
     }
 
-    pub fn map<W,F:FnMut(&V)->W>(&self, mut f:F) -> RadixTrie<K,W>
+    pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> RadixTrie<K, W>
     {
         RadixTrie {
             branching: self.branching.clone(),
@@ -35,7 +58,6 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
         }
     }
 
-    #[inline]
     pub fn insert(&mut self, k: K, v: V) -> Option<V>
     {
         let addedleaf = self.leaves.push(Leaf::new(k, v));
@@ -44,42 +66,91 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
         let (deepestbranching, deepestleaf) = self.branching.search_deepest_candidate(&addedpfx.bitslot());
         let mut l = deepestleaf;
         let mut b = deepestbranching;
-        if l != self[b].escape && !covers(&self[l], &addedpfx) {
+        if l != self[b].escape && !self[l].covers(&addedpfx) {
             l = self[b].escape;
         }
-        while !covers(&self[l],&addedpfx) {
-            assert!(!l.is_root_leaf());
-            b = self[b].parent;
-            l = self[b].escape;
-        }
-        if self[l] == addedpfx {
-            let mut v = self.leaves.remove_last().unwrap().value;
-            std::mem::swap(&mut v, &mut self.leaves[l].value);
-            Some(v)
-        } else {
-            self.branching.insert_prefix(addedleaf, &addedpfx.bitslot(), addedpfx.len(),
-                                         deepestbranching, deepestleaf,
-                                         &self[deepestleaf].bitslot(), self[deepestleaf].len());
-            None
+        // will stop since the top prefix always matches
+        loop {
+            match self[l].covering(&addedpfx) {
+                IpPrefixCoverage::NoCoverage => {
+                    assert!(!l.is_root_leaf());
+                    b = self[b].parent;
+                    l = self[b].escape;
+                }
+                IpPrefixCoverage::WiderRange => {
+                    self.branching.insert_prefix(addedleaf, &addedpfx.bitslot(), addedpfx.len(),
+                                                 deepestbranching, deepestleaf,
+                                                 &self[deepestleaf].bitslot(), self[deepestleaf].len());
+                    return None
+                }
+                IpPrefixCoverage::SameRange => {
+                    let mut v = self.leaves.remove_last().unwrap().value;
+                    std::mem::swap(&mut v, &mut self.leaves[l].value);
+                    return Some(v);
+                }
+            }
         }
     }
 
-    #[inline]
-    pub fn get(&self, k: &K) -> Option<&V>
+    pub fn replace(&mut self, k: K, v: V) -> Option<Leaf<K,V>>
+    {
+        let addedleaf = self.leaves.push(Leaf::new(k, v));
+        let addedpfx = self[addedleaf];
+
+        let (deepestbranching, deepestleaf) = self.branching.search_deepest_candidate(&addedpfx.bitslot());
+        let mut l = deepestleaf;
+        let mut b = deepestbranching;
+        if l != self[b].escape && !self[l].covers(&addedpfx) {
+            l = self[b].escape;
+        }
+        // will stop since the top prefix always matches
+        loop {
+            match self[l].covering(&addedpfx) {
+                IpPrefixCoverage::NoCoverage => {
+                    assert!(!l.is_root_leaf());
+                    b = self[b].parent;
+                    l = self[b].escape;
+                }
+                IpPrefixCoverage::WiderRange => {
+                    self.branching.insert_prefix(addedleaf, &addedpfx.bitslot(), addedpfx.len(),
+                                                 deepestbranching, deepestleaf,
+                                                 &self[deepestleaf].bitslot(), self[deepestleaf].len());
+                    return None;
+                }
+                IpPrefixCoverage::SameRange => {
+                    let mut v = self.leaves.remove_last().unwrap();
+                    std::mem::swap(&mut v, &mut self.leaves[l]);
+                    return Some(v);
+                }
+            }
+        }
+    }
+}
+
+impl<K:IpPrefix,V> RadixTrie<K,V>
+{
+    pub fn get<Q>(&self, k: &Q) -> Option<&V>
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
         if k.len() == self[l].len() { Some(&self.leaves[l].value) } else { None }
     }
 
-    #[inline]
-    pub fn get_mut(&mut self, k: &K) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
         if k.len() == self[l].len() { Some(&mut self.leaves[l].value) } else { None }
     }
 
-    #[inline]
-    pub fn remove(&mut self, k: &K) -> Option<V>
+    pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q> + IpPrefixCovering<K>
     {
         let (mut b,l) = self.inner_lookup(k);
         if k.len() != self[l].len() {
@@ -116,15 +187,18 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
     }
 
     #[inline]
-    fn inner_lookup(&self, k: &K) -> (BranchingIndex, LeafIndex)
+    fn inner_lookup<Q>(&self, k: &Q) -> (BranchingIndex, LeafIndex)
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q>
     {
-        let (mut n, mut l) = self.branching.search_deepest_candidate(&k.bitslot());
+        let (mut n, mut l) = self.branching.search_deepest_candidate(&k.bitslot_trunc());
 
         if l != self[n].escape {
-            if covers(&self[l], k) { return (n,l); }
+            if self[l].covers(k) { return (n,l); }
             l = self[n].escape;
         }
-        while !covers(&self[l], k) {
+        while !self[l].covers(k) {
             debug_assert!( !l.is_root_leaf() );
             n = self[n].parent;
             l = self[n].escape;
@@ -134,26 +208,31 @@ impl<K:BitPrefix, V> RadixTrie<K,V>
 
 
     #[inline]
-    pub fn lookup(&self, k: &K) -> (K, &V)
+    pub fn lookup<Q>(&self, k: &Q) -> (&K, &V)
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
         let result = &self.leaves[l];
-        (result.prefix, &result.value)
+        (&result.prefix, &result.value)
     }
 
     #[inline]
-    pub fn lookup_mut(&mut self, k: &K) -> (K, &mut V)
+    pub fn lookup_mut<Q>(&mut self, k: &Q) -> (&K, &mut V)
+        where
+            Q: IpPrefix<Addr=K::Addr>,
+            K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
         let result = &mut self.leaves[l];
-        (result.prefix, &mut result.value)
+        (&result.prefix, &mut result.value)
     }
 }
 
 
 #[cfg(feature= "graphviz")]
-impl<K:BitPrefix, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
-    where K: std::fmt::Display
+impl<K:std::fmt::Display, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
 {
     fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
     {
@@ -195,27 +274,27 @@ impl<K:BitPrefix, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
 }
 
 
-impl<K:BitPrefix,V> Index<BranchingIndex> for RadixTrie<K,V>
+impl<K,V> Index<BranchingIndex> for RadixTrie<K,V>
 {
     type Output = Branching;
     #[inline]
     fn index(&self, i: BranchingIndex) -> &Self::Output { &self.branching[i] }
 }
 
-impl<K:BitPrefix,V> IndexMut<BranchingIndex> for RadixTrie<K,V>
+impl<K,V> IndexMut<BranchingIndex> for RadixTrie<K,V>
 {
     #[inline]
     fn index_mut(&mut self, i: BranchingIndex) -> &mut Self::Output { &mut self.branching[i] }
 }
 
-impl<K:BitPrefix,V> Index<LeafIndex> for RadixTrie<K,V>
+impl<K,V> Index<LeafIndex> for RadixTrie<K,V>
 {
     type Output = K;
     #[inline]
     fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix }
 }
 
-impl<K:BitPrefix,V> IndexMut<LeafIndex> for RadixTrie<K,V>
+impl<K,V> IndexMut<LeafIndex> for RadixTrie<K,V>
 {
     #[inline]
     fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output { &mut self.leaves[i].prefix }
@@ -259,6 +338,7 @@ impl BranchingTree
         Self(branching)
     }
 
+    #[allow(dead_code)]
     pub fn clear(&mut self)
     {
         self.0.clear();
@@ -284,6 +364,7 @@ impl BranchingTree
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn remove_last(&mut self)
     {
         debug_assert!(self.0.len() > 1);
@@ -291,6 +372,7 @@ impl BranchingTree
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn remove(&mut self, i: BranchingIndex)
     {
         debug_assert!(!i.is_root());
@@ -310,6 +392,7 @@ impl BranchingTree
         }
     }
 
+    #[allow(dead_code)]
     pub fn search_one_matching_leaf(&self, mut b: BranchingIndex) -> LeafIndex
     {
         loop {
@@ -357,7 +440,7 @@ impl BranchingTree
         */
     pub fn insert_prefix_branching<B:BitSlot>(&mut self, n: BranchingIndex, e: LeafIndex, x: NodeIndex, p: u8, slot: &B) -> BranchingIndex
     {
-        debug_assert!(self[n].bit < p);
+        debug_assert!(self[n].bit <= p);
         let nn = self.push(n, e, p);
 
         // reste a le connecter comme il faut

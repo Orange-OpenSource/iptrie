@@ -1,87 +1,6 @@
-use std::ops::{Shr, Shl, BitAnd, Not, BitOr, BitXor};
 use std::fmt;
-use std::hash::Hash;
-
-/// A fixed-length slot of bits.
-///
-/// This is the slot on which all the prefix
-/// (and so the tries) computations are made.
-/// As an example, `u32` or `u128` are good candidates
-/// for Ipv4 or Ipv6 prefixes.
-pub(crate) trait BitSlot
-: 'static
-+ Clone + Copy + Default
-+ fmt::Debug + fmt::Binary
-+ Eq + PartialEq + Ord + PartialOrd + Hash
-+ Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>
-+ Shl<u8,Output=Self> + Shr<u8,Output=Self>
-+ BitPrefix<Slot=Self>
-{
-    const LEN: u8;
-    fn single_bit(pos: u8) -> Self;
-    fn bitmask(len: u8) -> Self;
-
-    fn first_bit(&self) -> u8;
-    fn is_set(&self, pos: u8) -> bool;
-
-    fn as_u16(&self) -> u16;
-}
-
-macro_rules! bitslot {
-    ($X:ty) => {
-        impl BitSlot for $X {
-            const LEN: u8 = std::mem::size_of::<$X>() as u8 * 8;
-            #[inline] fn first_bit(&self) -> u8 {
-                self.leading_zeros() as u8 + 1
-            }
-            #[inline] fn single_bit(pos: u8) -> Self {
-                debug_assert!(pos > 0); debug_assert!( pos <= Self::LEN);
-                1 as $X << (Self::LEN-pos)
-            }
-            #[inline] fn is_set(&self, pos: u8) -> bool {
-                debug_assert!(pos > 0); debug_assert!( pos <= Self::LEN);
-                (self >> (Self::LEN-pos)) & 1 != 0
-            }
-            #[inline] fn bitmask(len:u8) -> Self {
-                debug_assert!( len <= Self::LEN);
-                if len == 0 { 0 } else { (!0 as $X) << (Self::LEN-len) }
-            }
-            #[inline] fn as_u16(&self) -> u16 {
-                *self as u16
-            }
-        }
-        // each slot is a prefix with its maximal length
-        impl BitPrefix for $X {
-            type Slot = $X;
-            #[inline] fn root() -> Self { 0 }
-            #[inline] fn bitslot(&self) -> Self::Slot { *self }
-            #[inline] fn len(&self) -> u8 { <$X as BitSlot>::LEN }
-        }
-    };
-}
-
-bitslot!(u32);
-bitslot!(u64);
-bitslot!(u128);
-
-
-/// Inner bit prefix
-#[allow(clippy::len_without_is_empty)]
-pub(crate) trait BitPrefix: fmt::Debug+Clone+Copy+Eq
-{
-    type Slot: BitSlot;
-
-    fn root() -> Self; // root prefix, of len =0
-
-    fn bitslot(&self) -> Self::Slot;
-
-    /// Gets the number of significant bits
-    fn len(&self) -> u8;
-}
-
-
-
 use std::ops::{Index, IndexMut};
+use crate::prefix::IpPrefix;
 
 #[derive(Clone)]
 pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
@@ -98,7 +17,7 @@ impl<K,V> Leaf<K,V> {
 }
 
 
-impl<K:BitPrefix, V> TrieLeaves<Leaf<K, V>>
+impl<K: IpPrefix, V> TrieLeaves<Leaf<K, V>>
 {
     pub fn new(capacity: usize, k:K, v:V) -> Self {
         let mut leaves = Vec::with_capacity(capacity);
@@ -122,6 +41,7 @@ impl<L> TrieLeaves<L>
         self.0.pop()
     }
 
+    #[allow(dead_code)]
     pub fn remove(&mut self, i: LeafIndex) -> L
     {
         debug_assert!( !i.is_root_leaf() );
@@ -168,7 +88,7 @@ pub(crate) struct LeafIndex(i32);
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub(crate) struct BranchingIndex(i32);
 
-
+#[allow(dead_code)]
 impl NodeIndex {
     #[inline] pub(crate) fn root() -> Self { Self(0) }
     #[inline] pub(crate) fn root_leaf() -> Self { Self(!0) }
