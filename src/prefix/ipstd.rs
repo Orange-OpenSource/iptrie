@@ -145,21 +145,6 @@ macro_rules! ipprefix {
             }
         }
 
-        impl IpPrefixCovering<$ipaddr> for $prefix {
-            #[inline]
-            fn covering(&self, other: &$ipaddr) -> IpPrefixCoverage
-            {
-                if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
-                    IpPrefixCoverage::NoCoverage
-                } else {
-                    match self.len().cmp(&other.len()) {
-                        Ordering::Less => IpPrefixCoverage::WiderRange,
-                        Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCoverage
-                    }
-                }
-            }
-        }
         impl IpPrefix for $ipnet
         {
             type Slot = $slot;
@@ -184,54 +169,6 @@ macro_rules! ipprefix {
             const MAX_LEN: u8 = <Self as IpPrefix>::Slot::LEN;
             type Addr = $ipaddr;
             #[inline] fn network(&self) -> Self::Addr { *self }
-        }
-
-        impl IpPrefixCovering<$ipaddr> for $ipnet {
-            #[inline]
-            fn covering(&self, other: &$ipaddr) -> IpPrefixCoverage
-            {
-                if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
-                    IpPrefixCoverage::NoCoverage
-                } else {
-                    match self.len().cmp(&other.len()) {
-                        Ordering::Less => IpPrefixCoverage::WiderRange,
-                        Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCoverage
-                    }
-                }
-            }
-        }
-
-        impl IpPrefixCovering<$prefix> for $ipnet {
-            #[inline]
-            fn covering(&self, other: &$prefix) -> IpPrefixCoverage
-            {
-                if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
-                    IpPrefixCoverage::NoCoverage
-                } else {
-                    match self.prefix_len().cmp(&other.len()) {
-                        Ordering::Less => IpPrefixCoverage::WiderRange,
-                        Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCoverage
-                    }
-                }
-            }
-        }
-
-        impl IpPrefixCovering<$ipnet> for $prefix {
-            #[inline]
-            fn covering(&self, other: &$ipnet) -> IpPrefixCoverage
-            {
-                if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
-                    IpPrefixCoverage::NoCoverage
-                } else {
-                    match self.len().cmp(&other.prefix_len()) {
-                        Ordering::Less => IpPrefixCoverage::WiderRange,
-                        Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCoverage
-                    }
-                }
-            }
         }
     }
 }

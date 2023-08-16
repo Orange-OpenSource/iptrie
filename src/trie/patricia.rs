@@ -72,7 +72,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
         // will stop since the top prefix always matches
         loop {
             match self[l].covering(&addedpfx) {
-                IpPrefixCoverage::NoCoverage => {
+                IpPrefixCoverage::NoCover => {
                     assert!(!l.is_root_leaf());
                     b = self[b].parent;
                     l = self[b].escape;
@@ -106,7 +106,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
         // will stop since the top prefix always matches
         loop {
             match self[l].covering(&addedpfx) {
-                IpPrefixCoverage::NoCoverage => {
+                IpPrefixCoverage::NoCover => {
                     assert!(!l.is_root_leaf());
                     b = self[b].parent;
                     l = self[b].escape;

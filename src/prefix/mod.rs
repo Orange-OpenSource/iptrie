@@ -4,14 +4,15 @@
 mod slot;
 mod ipv6trunc;
 mod ipstd;
+mod cover;
 
 #[cfg(test)] mod tests;
 
-use std::cmp::Ordering;
 use std::error::Error;
 pub use slot::*;
 pub use ipv6trunc::*;
 pub use ipstd::*;
+pub use cover::*;
 
 use std::fmt;
 use std::fmt::{Debug, Display};
@@ -65,62 +66,10 @@ pub trait IpPrefix: Debug+Clone+Copy
     /// The underlying ip address (usually Ipv4Addr or Ipv6Addr)
     type Addr: Display+Clone+Copy+Eq+Hash;
 
-    /// The address of the network defined by the prefixe.
+    /// The address of the network defined by the prefixv
     ///
     /// All the bits greater than the prefix length are set to `0`
     fn network(&self) -> Self::Addr;
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum IpPrefixCoverage { NoCoverage, WiderRange, SameRange }
-
-impl IpPrefixCoverage {
-    #[inline] fn is_none(&self) -> bool { *self == IpPrefixCoverage::NoCoverage }
-    #[inline] fn is_wider(&self) -> bool { *self == IpPrefixCoverage::WiderRange }
-    #[inline] fn is_same(&self) -> bool { *self == IpPrefixCoverage::SameRange }
-    #[inline] fn is_covering(&self) -> bool { !self.is_none() }
-}
-
-/// A trait to check if the prefix covers the specified data
-pub trait IpPrefixCovering<P>:IpPrefix
-{
-    /// Checks the coverage of this prefix against the specified one.
-    ///
-    /// * `SameRange` means that the two prefixes are equivalent
-    /// * `WiderRange` means that this prefix includes the other
-    /// * `NoCoverage` groups all the other cases
-    ///
-    /// # Difference with `PartialEq`
-    /// Two prefixes could be different but equivalent regarding to
-    /// the range of addresses they cover.
-    /// ```
-    /// # use iptrie::*;
-    /// use ipnet::Ipv4Net;
-    /// let a = "1.1.1.1/16".parse::<Ipv4Net>().unwrap();
-    /// let b = "1.1.2.2/16".parse::<Ipv4Net>().unwrap();
-    /// assert!( a != b ); // since host addr are different
-    /// assert! (a.covers_equally(&b) ); // but prefixes are equivalent
-    /// ```
-    fn covering(&self, other: &P) -> IpPrefixCoverage;
-
-    #[inline] fn covers(&self, other: &P) -> bool{ self.covering(other).is_covering() }
-    #[inline] fn covers_striclty(&self, other: &P) -> bool{ self.covering(other).is_wider() }
-    #[inline] fn covers_equally(&self, other: &P) -> bool{ self.covering(other).is_same() }
-}
-
-impl<P:IpPrefix> IpPrefixCovering<Self> for P {
-    #[inline]
-    fn covering(&self, other: &Self) -> IpPrefixCoverage {
-        if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
-            IpPrefixCoverage::NoCoverage
-        } else {
-            match self.len().cmp(&other.len()) {
-                Ordering::Less => IpPrefixCoverage::WiderRange,
-                Ordering::Equal => IpPrefixCoverage::SameRange,
-                Ordering::Greater => IpPrefixCoverage::NoCoverage
-            }
-        }
-    }
 }
 
 
