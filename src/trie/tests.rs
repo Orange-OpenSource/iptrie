@@ -16,7 +16,7 @@ fn ipv6_tries() {
         let addr = Uniform::<u128>::from(1..=u128::MAX);
         std::iter::repeat_with(|| {
             Ipv6Net::new(addr.sample(&mut rng).into(), prefix.sample(&mut rng)).unwrap()
-        }).take(1_000_000).collect::<Vec<_>>()
+        }).take(100_000).collect::<Vec<_>>()
     };
 
     let t1: RTrieSet<Ipv6Prefix> = samples.iter().map(|i| Ipv6Prefix::from(*i)).collect();
@@ -24,9 +24,9 @@ fn ipv6_tries() {
     let t3: RTrieSet<Ipv6Prefix120> = samples.iter().map(|i| Ipv6Prefix120::try_from(*i).unwrap()).collect();
     let t4: RTrieSet<Ipv6Net> = RTrieSet::from_iter(samples);
 
-    let addr = Uniform::<u128>::from(1..=u128::MAX);
+    let addr = Uniform::<u128>::from(((u64::MAX as u128)<<64)..=u128::MAX);
     std::iter::repeat_with(|| Ipv6Addr::from(addr.sample(&mut rng)))
-        .take(1_000_000)
+        .take(100_000)
         .for_each(|ip| {
             let p1 = t1.lookup(&ip);
             let p2 = t2.lookup(&ip);

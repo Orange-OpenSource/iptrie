@@ -15,6 +15,7 @@ ipnet = "2.8"
 [dev-dependencies]
 libc = "0.2"
 rand = "0.8"
+ip_network_table-deps-treebitmap = "0.5"
 
 [profile.release]
 lto = "thin"
