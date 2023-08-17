@@ -13,7 +13,7 @@ impl IpPrefixCoverage {
     #[inline] fn is_covering(&self) -> bool { !self.is_none() }
 }
 
-/// A trait to check if the prefix covers the specified data
+/// A trait to check the prefix coverage
 pub trait IpPrefixCovering<P>
 {
     /// Checks the coverage of this prefix against a set of adress

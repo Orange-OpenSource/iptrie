@@ -22,7 +22,7 @@ use std::str::FromStr;
 
 use ipnet::{Ipv4Net, Ipv6Net};
 
-/// Bit prefix
+/// Ip prefix (as bit prefix)
 #[allow(clippy::len_without_is_empty)]
 pub trait IpPrefix: Debug+Clone+Copy
 {
