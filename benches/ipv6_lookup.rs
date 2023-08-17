@@ -38,7 +38,7 @@ fn random_ipv6addr() -> impl Iterator<Item=Ipv6Addr>
 fn nop_ipv6prefix_trie(bencher: &mut Bencher)
 {
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(sample.next().unwrap()) );
     println!("{}", result.len());
 }
@@ -49,7 +49,7 @@ fn lookup_ipv6prefix_trie(bencher: &mut Bencher)
 {
     let trie: Ipv6RTrieSet = random_ipv6net().map(Ipv6Prefix::from).collect();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -62,7 +62,7 @@ fn lookup_ipv6prefix120_trie(bencher: &mut Bencher)
         .collect::<Result<_,_>>()
         .unwrap();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -75,7 +75,7 @@ fn lookup_ipv6prefix56_trie(bencher: &mut Bencher)
         .collect::<Result<_,_>>()
         .unwrap();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -85,7 +85,7 @@ fn lookup_ipv6net_trie(bencher: &mut Bencher)
 {
     let trie: RTrieSet<Ipv6Net> = random_ipv6net().collect();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -97,7 +97,7 @@ fn lookup_ipv6net_treebit(bencher: &mut Bencher)
         .fold(IpLookupTable::<Ipv6Addr,()>::with_capacity(1_000_000),
               |mut trie,p| { trie.insert(p.network(), p.len() as u32, ()); trie });
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.longest_match(sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -110,7 +110,7 @@ fn lookup_ipv6prefix_lctrie(bencher: &mut Bencher)
     let trie: Ipv6RTrieSet = random_ipv6net().map(Ipv6Prefix::from).collect();
     let trie = trie.compress();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -124,7 +124,7 @@ fn lookup_ipv6prefix120_lctrie(bencher: &mut Bencher)
         .unwrap();
     let trie = trie.compress();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -138,7 +138,7 @@ fn lookup_ipv6prefix56_lctrie(bencher: &mut Bencher)
         .unwrap();
     let trie = trie.compress();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }
@@ -149,7 +149,7 @@ fn lookup_ipv6net_lctrie(bencher: &mut Bencher)
     let trie: RTrieSet<Ipv6Net> = random_ipv6net().collect();
     let trie = trie.compress();
     let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000_000);
+    let mut result = Vec::with_capacity(1_000);
     bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())) );
     println!("{}", result.len());
 }

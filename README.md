@@ -54,3 +54,43 @@ fn main()
     assert_eq!(lctrie.lookup(&"1.1.0.0/21".parse::<Ipv4Prefix>().unwrap()).to_string(), "1.1.0.0/20");
 }
 ```
+
+
+# Performances
+
+For this crate, we want the highest performance for lookup despite the insertion operation.
+We made comparison with the [crate ip_network_table-deps-treebitmap](https://crates.io/crates/ip_network_table-deps-treebitmap)
+identified by `IpLookupTable` in the next sections.
+
+All these tests were performed on a laptop.
+
+## Lookup algorithms
+
+### Randomly generated prefixes
+
+We generated one million of random prefixes for Ipv4 and Ipv6 in order to feed
+the lookup table. Then, we checked the lookup procedure with randomly generated
+Ip addresses.
+
+|                              | Ipv4 lookup | Ipv6 lookup |
+|------------------------------|:-----------:|:-----------:|
+| IpLookupTable                |    50 ns    |   165 ns    |
+| Patricia trie _(this crate)_ |   125 ns    |   700 ns    |
+| LC-Trie _(this crate)_       |    80 ns    |   320 ns    |
+
+The lookup table based on tree bitmap is the best choice.
+
+### BGP prefixes
+
+But the internet has an internal structure that is not random. So, we use
+a real BGP table with more than 1M Ipv4 prefixes and more than 175k Ipv6 prefixes.
+Then, we checked the lookup procedure with randomly generated
+Ip addresses.
+
+|                              | Ipv4 lookup | Ipv6 lookup |
+|------------------------------|:-----------:|:-----------:|
+| IpLookupTable                |    61 ns    |    50 ns    |
+| Patricia trie _(this crate)_ |   130 ns    |    42 ns    |
+| LC-Trie _(this crate)_       |    47 ns    |    24 ns    |
+
+This time, the lookup based on LC-Trie has the best performances.
