@@ -8,12 +8,19 @@ pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
 
 #[derive(Clone)]
 pub(crate) struct Leaf<K,V> {
-    pub(crate) prefix: K,
-    pub(crate) value: V
+    prefix: K,
+    value: V
 }
 
 impl<K,V> Leaf<K,V> {
-    pub(crate) fn new(k:K, v:V) -> Self { Self { prefix: k, value: v}}
+    pub fn new(k:K, v:V) -> Self { Self { prefix: k, value: v}}
+    pub fn prefix(&self) -> &K { &self.prefix }
+    pub fn get(&self) -> (&K,&V) { (&self.prefix, &self.value) }
+    pub fn get_mut(&mut self) -> (&K,&mut V) { (&self.prefix, &mut self.value) }
+}
+
+impl<K,V> Into<(K,V)> for Leaf<K,V> {
+    fn into(self) -> (K, V) { (self.prefix, self.value) }
 }
 
 

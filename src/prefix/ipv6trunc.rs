@@ -4,9 +4,12 @@ use super::*;
 ///
 /// In many applications, managed Ipv6 prefixes are never longer than 56 bits.
 /// In theses cases, it is possible to save memory space by encoding it in
-/// 64 bits with its length encoded in one byte.
-///
-/// The resulting prefix is 4 times shorter that the corresponign Ipv6 generic prefix.
+/// 64 bits with its length encoded in the last byte.
+/// ```text
+/// |------------ 56 bits ---------------|--8 bits--|
+///            ip prefix slot                length
+/// ```
+/// The resulting prefix is 4 times shorter that the corresponding Ipv6 generic prefix.
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv6Prefix56 { addr: u64 }
 
@@ -27,8 +30,11 @@ impl IpPrefix for Ipv6Prefix56
 ///
 /// In many applications, managed Ipv6 prefixes are never longer than 120 bits.
 /// In theses cases, it is possible to save memory space by encoding it in
-/// 128 bits with its length encoded in one byte.
-///
+/// 128 bits with its length encoded in last byte.
+/// ```text
+/// |---------------------- 120 bits -----------------------|--8 bits--|
+///                      ip prefix slot                         length
+/// ```
 /// The resulting prefix is twice as short as the corresponding Ipv6 generic prefix.
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv6Prefix120 { addr: u128 }

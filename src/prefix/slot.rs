@@ -1,5 +1,4 @@
 
-
 use std::ops::{Shr, Shl, BitAnd, Not, BitOr, BitXor};
 use std::fmt::{Binary, Debug};
 use std::hash::Hash;
@@ -13,6 +12,7 @@ use std::hash::Hash;
 /// for Ipv4 or Ipv6 prefixes.
 /// Moreover, `u64` could be used to save memory
 /// for truncated Ipv6 prefixes.
+#[doc(hidden)]
 pub trait BitSlot :
 Clone + Copy + Default + Debug + Binary + Eq + PartialEq + Hash
 + Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>

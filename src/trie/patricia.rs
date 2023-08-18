@@ -4,8 +4,7 @@
 use std::num::NonZeroUsize;
 use std::ops::{Index, IndexMut};
 use crate::prefix::*;
-
-pub(crate) use super::common::*;
+use super::common::*;
 
 #[derive(Clone)]
 pub(crate) struct RadixTrie<K,V>
@@ -22,8 +21,8 @@ impl<K,V> RadixTrie<K,V>
     }
 
     #[inline]
-    pub fn drain(&mut self) -> impl Iterator<Item=Leaf<K,V>> + '_ {
-        self.leaves.0.drain(..)
+    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut Leaf<K,V>> + '_ {
+        self.leaves.0.iter_mut()
     }
 
     #[inline]
@@ -52,7 +51,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             branching: self.branching.clone(),
             leaves: TrieLeaves(
                 self.leaves.0.iter()
-                    .map(|leaf| Leaf::new(leaf.prefix, f(&leaf.value)))
+                    .map(|leaf| Leaf::new(*leaf.prefix(), f(&leaf.get().1)))
                     .collect()
             )
         }
@@ -84,8 +83,9 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
                     return None
                 }
                 IpPrefixCoverage::SameRange => {
-                    let mut v = self.leaves.remove_last().unwrap().value;
-                    std::mem::swap(&mut v, &mut self.leaves[l].value);
+                    let leaf = self.leaves.remove_last().unwrap();
+                    let mut v = <Leaf<K,V> as Into<(K,V)>>::into(leaf).1;
+                    std::mem::swap(&mut v, &mut self.leaves[l].get_mut().1);
                     return Some(v);
                 }
             }
@@ -129,22 +129,22 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
 
 impl<K:IpPrefix,V> RadixTrie<K,V>
 {
-    pub fn get<Q>(&self, k: &Q) -> Option<&V>
+    pub fn get<Q>(&self, k: &Q) -> Option<(&K,&V)>
         where
             Q: IpPrefix<Addr=K::Addr>,
             K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
-        if k.len() == self[l].len() { Some(&self.leaves[l].value) } else { None }
+        if k.len() == self[l].len() { Some(self.leaves[l].get()) } else { None }
     }
 
-    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<(&K,&mut V)>
         where
             Q: IpPrefix<Addr=K::Addr>,
             K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
-        if k.len() == self[l].len() { Some(&mut self.leaves[l].value) } else { None }
+        if k.len() == self[l].len() { Some(self.leaves[l].get_mut()) } else { None }
     }
 
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
@@ -157,6 +157,9 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             None
         } else {
             if l == self[b].escape {
+                if l == LeafIndex::root_leaf() {
+                    panic!("can’t remove root prefix");
+                }
                 // the node to suppress is an escape node
                 // so we should climb to its first appearance
                 while self[self[b].parent].escape == l {
@@ -182,7 +185,8 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
                 bb = self[bb].parent; // climb up the escape chain
             }
             // effective removal of the leaf
-            Some(self.leaves.0.swap_remove(l.index()).value)
+            let removed = self.leaves.0.swap_remove(l.index());
+            Some(<Leaf<K,V> as Into<(K,V)>>::into(removed).1)
         }
     }
 
@@ -214,8 +218,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
-        let result = &self.leaves[l];
-        (&result.prefix, &result.value)
+        self.leaves[l].get()
     }
 
     #[inline]
@@ -225,8 +228,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             K: IpPrefixCovering<Q>
     {
         let (_,l) = self.inner_lookup(k);
-        let result = &mut self.leaves[l];
-        (&result.prefix, &mut result.value)
+        self.leaves[l].get_mut()
     }
 }
 
@@ -291,14 +293,9 @@ impl<K,V> Index<LeafIndex> for RadixTrie<K,V>
 {
     type Output = K;
     #[inline]
-    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix }
+    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix() }
 }
 
-impl<K,V> IndexMut<LeafIndex> for RadixTrie<K,V>
-{
-    #[inline]
-    fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output { &mut self.leaves[i].prefix }
-}
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Branching {

@@ -3,6 +3,7 @@ use ipnet::{Ipv4Net,Ipv6Net};
 use std::net::{Ipv4Addr,Ipv6Addr};
 use crate::*;
 
+#[doc(hidden)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum IpPrefixCoverage { NoCover, WiderRange, SameRange }
 
@@ -33,11 +34,29 @@ pub trait IpPrefixCovering<P>
     /// assert!( a != b ); // since host addr are different
     /// assert! (a.covers_equally(&b) ); // but prefixes are equivalent
     /// ```
+    #[doc(hidden)]
     fn covering(&self, other: &P) -> IpPrefixCoverage;
 
-    #[inline] fn covers(&self, other: &P) -> bool{ self.covering(other).is_covering() }
-    #[inline] fn covers_striclty(&self, other: &P) -> bool{ self.covering(other).is_wider() }
-    #[inline] fn covers_equally(&self, other: &P) -> bool{ self.covering(other).is_same() }
+    /// Checks the coverage of this prefix against a set of addresses
+    ///
+    /// # Difference with `PartialEq`
+    /// Two prefixes could be different but equivalent regarding to
+    /// the range of addresses they cover.
+    /// ```
+    /// # use iptrie::*;
+    /// use ipnet::Ipv4Net;
+    /// let a = "1.1.1.1/16".parse::<Ipv4Net>().unwrap();
+    /// let b = "1.1.2.2/16".parse::<Ipv4Net>().unwrap();
+    /// assert!( a != b ); // host addr are different
+    /// assert! (a.covers(&b) && b.covers(&a)); // but prefixes are equivalent
+    /// ```
+    #[inline]
+    fn covers(&self, other: &P) -> bool{ self.covering(other).is_covering() }
+
+    #[inline] #[doc(hidden)]
+    fn covers_striclty(&self, other: &P) -> bool{ self.covering(other).is_wider() }
+    #[inline] #[doc(hidden)]
+    fn covers_equally(&self, other: &P) -> bool{ self.covering(other).is_same() }
 }
 
 impl<P:IpPrefix> IpPrefixCovering<Self> for P

@@ -6,6 +6,7 @@ use std::ops::{Index, IndexMut};
 use super::patricia::*;
 
 use crate::prefix::*;
+use crate::trie::common::*;
 
 pub(crate) struct LevelCompressedTrie<K,V> {
     branching: CompressedTree,
@@ -48,7 +49,9 @@ impl<K:IpPrefix,V>  LevelCompressedTrie<K,V> {
             branching: self.branching.clone(),
             leaves: TrieLeaves(
                 self.leaves.0.iter()
-                    .map(|leaf| Leaf::new(leaf.prefix, f(&leaf.value)))
+                    .map(|leaf| {
+                        Leaf::new(*leaf.prefix(), f(leaf.get().1))
+                    })
                     .collect()
             )
         }
@@ -142,52 +145,24 @@ impl<K:IpPrefix,V>  LevelCompressedTrie<K,V> {
 impl<K:IpPrefix,V> LevelCompressedTrie<K,V>
 {
     #[inline]
-    pub fn get<Q>(&self, k: &Q) -> Option<&V>
+    pub fn get<Q>(&self, k: &Q) -> Option<(&K,&V)>
         where
             Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q> + PartialEq<Q>
+            K: IpPrefixCovering<Q>
     {
-        let mut b = BranchingIndex::root();
-        let l: LeafIndex; // = LeafIndex::root_leaf();
-        loop {
-            match self[b].lookup(&k.bitslot()) {
-                n if n.is_branching() => b = (*n).into(),
-                n => { // leaf
-                    l = (*n).into();
-                    break;
-                }
-            }
-        }
-        let leaf = &self.leaves[l];
-        if leaf.prefix == *k {
-            Some(&leaf.value)
-        } else {
-            None
-        }
+        let l = &self.leaves[self.inner_lookup(k)];
+        if k.len() == l.prefix().len() { Some(l.get()) } else { None }
     }
 
     #[inline]
-    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<(&K,&mut V)>
         where
             Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q> + PartialEq<Q>
+            K: IpPrefixCovering<Q>
     {
-        let mut b = BranchingIndex::root();
-        let l : LeafIndex; // = LeafIndex::root_leaf();
-        loop {
-            match self[b].lookup(&k.bitslot()) {
-                n if n.is_branching() => b = (*n).into(),
-                n => { // leaf
-                    l = (*n).into();
-                    break;
-                }
-            }
-        }        let leaf = &mut self.leaves[l];
-        if leaf.prefix == *k {
-            Some(&mut leaf.value)
-        } else {
-            None
-        }
+        let l = self.inner_lookup(k);
+        let l = &mut self.leaves[l];
+        if k.len() == l.prefix().len() { Some(l.get_mut()) } else { None }
     }
 
     #[inline]
@@ -196,9 +171,7 @@ impl<K:IpPrefix,V> LevelCompressedTrie<K,V>
             Q: IpPrefix<Addr=K::Addr>,
             K: IpPrefixCovering<Q>
     {
-        let l = self.inner_lookup(k);
-        let result = &self.leaves[l];
-        (&result.prefix, &result.value)
+        self.leaves[self.inner_lookup(k)].get()
     }
 
     #[inline]
@@ -208,8 +181,7 @@ impl<K:IpPrefix,V> LevelCompressedTrie<K,V>
             K: IpPrefixCovering<Q>
     {
         let l = self.inner_lookup(k);
-        let result = &mut self.leaves[l];
-        (&result.prefix, &mut result.value)
+        self.leaves[l].get_mut()
     }
 
     #[inline]
@@ -282,13 +254,7 @@ impl<K: IpPrefix, V> Index<LeafIndex> for LevelCompressedTrie<K,V>
 {
     type Output = K;
     #[inline]
-    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix }
-}
-
-impl<K: IpPrefix, V> IndexMut<LeafIndex> for LevelCompressedTrie<K,V>
-{
-    #[inline]
-    fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output { &mut self.leaves[i].prefix }
+    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix() }
 }
 
 
