@@ -59,10 +59,8 @@ fn main()
 # Performances
 
 For this crate, we want the highest performance for lookup despite the insertion operation.
-We made comparison with the [crate ip_network_table-deps-treebitmap](https://crates.io/crates/ip_network_table-deps-treebitmap)
+We made comparison with the crate [ip_network_table-deps-treebitmap](https://crates.io/crates/ip_network_table-deps-treebitmap)
 identified by `IpLookupTable` in the next sections.
-
-All these tests were performed on a laptop.
 
 ## Lookup algorithms
 
