@@ -14,6 +14,7 @@ use super::*;
 
 /// An Ipv4 prefix similar to [`Ipv4Net`] but with trailing bits
 ///  guaranteed to equal `0`
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv4Prefix {
     pub(super) addr: u32,
@@ -52,6 +53,7 @@ impl Ipv4Prefix {
 
 /// An Ipv4 prefix similar to [`Ipv6Net`] but with trailing bits
 ///  guaranteed to equal `0`
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv6Prefix {
     pub(super) addr: u128,

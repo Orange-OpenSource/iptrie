@@ -1,4 +1,4 @@
-
+use std::collections::HashSet;
 use super::*;
 use ipnet::Ipv6Net;
 use rand::*;
@@ -140,4 +140,33 @@ fn prefix_cover()
         assert_eq!( b2.covers(&a1), l1 >= l2 );
         assert_eq!( b2.covers(&b1), l1 >= l2 );
     })
+}
+
+
+#[test]
+fn coverage_std_fns()
+{
+    coverage_std_fn_for::<Ipv4Net>();
+    coverage_std_fn_for::<Ipv4Prefix>();
+    coverage_std_fn_for::<Ipv6Net>();
+    coverage_std_fn_for::<Ipv6Prefix>();
+    coverage_std_fn_for::<Ipv6Prefix56>();
+    coverage_std_fn_for::<Ipv6Prefix120>();
+
+    let err : IpPrefixError = ::ipnet::PrefixLenError.into();
+    dbg!(err.clone());
+    let _ : IpPrefixError = "a".parse::<Ipv4Addr>().unwrap_err().into();
+    let err : IpPrefixError = "a".parse::<Ipv4Net>().unwrap_err().into();
+    let _ = err.to_string();
+}
+
+fn coverage_std_fn_for<P>()
+    where
+        P: Default+Clone+Hash+Eq+Debug+Display
+{
+    let p = P::default();
+    dbg!(&p);
+    assert!(p == p.clone());
+    assert_eq!(p.to_string(), p.clone().to_string());
+    let _ = HashSet::<P>::from_iter(std::iter::once(p));
 }

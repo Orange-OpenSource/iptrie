@@ -10,16 +10,17 @@ use super::*;
 ///            ip prefix slot                length
 /// ```
 /// The resulting prefix is 4 times shorter that the corresponding Ipv6 generic prefix.
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
-pub struct Ipv6Prefix56 { addr: u64 }
+pub struct Ipv6Prefix56 { slot: u64 }
 
 impl IpPrefix for Ipv6Prefix56
 {
     type Slot = u64;
-    #[inline] fn root() -> Self { Self { addr: 0 } }
-    #[inline] fn bitslot(&self) -> Self::Slot { self.addr }
-    #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.addr & !255 }
-    #[inline] fn len(&self) -> u8 { self.addr as u8 }
+    #[inline] fn root() -> Self { Self { slot: 0 } }
+    #[inline] fn bitslot(&self) -> Self::Slot { self.slot }
+    #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.slot & !255 }
+    #[inline] fn len(&self) -> u8 { self.slot as u8 }
 
     const MAX_LEN: u8 = 56;
     type Addr = Ipv6Addr;
@@ -36,25 +37,105 @@ impl IpPrefix for Ipv6Prefix56
 ///                      ip prefix slot                         length
 /// ```
 /// The resulting prefix is twice as short as the corresponding Ipv6 generic prefix.
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
-pub struct Ipv6Prefix120 { addr: u128 }
+pub struct Ipv6Prefix120 { slot: u128 }
 
 impl IpPrefix for Ipv6Prefix120
 {
     type Slot = u128;
-    #[inline] fn root() -> Self { Self { addr: 0 } }
-    #[inline] fn bitslot(&self) -> Self::Slot { self.addr }
-    #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.addr & !255 }
-    #[inline] fn len(&self) -> u8 { self.addr as u8 }
+    #[inline] fn root() -> Self { Self { slot: 0 } }
+    #[inline] fn bitslot(&self) -> Self::Slot { self.slot }
+    #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.slot & !255 }
+    #[inline] fn len(&self) -> u8 { self.slot as u8 }
 
     const MAX_LEN: u8 = 120;
     type Addr = Ipv6Addr;
-    #[inline] fn network(&self) -> Self::Addr { (self.addr & !255).into() }
+    #[inline] fn network(&self) -> Self::Addr { (self.slot & !255).into() }
 }
 
 
 macro_rules! ipv6prefix {
     ($prefix:ident, $slot:ty) => {
+        impl $prefix {
+
+            /// Creates a prefix from a well structured slot.
+            ///
+            /// A well-structured slot is structured as follows where length is
+            /// encoded on the last byte (8 bits) and this length should not
+            /// exceed the prefix limit [`Self::MAX_LEN`].
+            /// ```text
+            /// |------------ ip prefix slot ------------|-- length --|
+            /// ```
+            ///
+            /// # Safety
+            /// Results are unpredictable if the last byte is not a valid length
+            /// (i.e. exceeds [`Self::MAX_LEN`])
+            ///
+            /// A safe version of this function exists as [`Self::from_slot`]
+            /// or also [`Self::try_from_slot] which doesn’t panic.
+            ///
+            /// # Example
+            /// ```
+            /// # use iptrie::*;
+            /// let prefix = "1:1::/48".parse::<Ipv6Prefix56>().unwrap();
+            /// let slot : u64 = prefix.into_slot();
+            /// assert_eq!( prefix, unsafe { Ipv6Prefix56::from_slot_unchecked(slot)});
+            ///
+            /// let prefix = "1:1::/48".parse::<Ipv6Prefix120>().unwrap();
+            /// let slot : u128 = prefix.into_slot();
+            /// assert_eq!( prefix, unsafe { Ipv6Prefix120::from_slot_unchecked(slot)});
+            ///
+            #[inline]
+            pub unsafe fn from_slot_unchecked(slot: $slot) -> Self { Self { slot } }
+
+
+            /// Creates a prefix from a well structured slot.
+            ///
+            /// A well-structured slot is structured as follows where length is
+            /// encoded on the last byte (8 bits) and this length should not
+            /// exceed the prefix limit [`Self::MAX_LEN`].
+            /// ```text
+            /// |------------ ip prefix slot ------------|-- length --|
+            /// ```
+            /// It returns an error if the last byte is not a valid length.
+            ///
+            /// If you are sure that the slot is well-structured, an unchecked
+            /// (and unsafe) version of this function is provided by [`Self::from_slot_unchecked`].
+            ///
+            /// # Example
+            /// ```
+            /// # use iptrie::*;
+            /// let prefix = "1:1::/48".parse::<Ipv6Prefix56>().unwrap();
+            /// let slot : u64 = prefix.into_slot();
+            /// assert_eq!( Ok(prefix), Ipv6Prefix56::from_slot(slot));
+            ///
+            /// let prefix = "1:1::/48".parse::<Ipv6Prefix120>().unwrap();
+            /// let slot : u128 = prefix.into_slot();
+            /// assert_eq!( Ok(prefix), Ipv6Prefix120::from_slot(slot));
+            ///
+            #[inline]
+            pub fn from_slot(slot: $slot) -> Result<Self, IpPrefixError> {
+                if slot as u8  <= Self::MAX_LEN {
+                    Ok( Self { slot } )
+                } else {
+                    Err(IpPrefixError::PrefixLenError)
+                }
+            }
+
+
+            /// Gets the raw value of the inner slot.
+            ///
+            /// This slot is structured as follows where length is
+            /// encoded on the last byte (8 bits).
+            /// ```text
+            /// |------------ ip prefix slot ------------|-- length --|
+            /// ```
+            /// The returned slot could be safely used with [`Self::from_slot_unchecked`].
+            #[inline]
+            pub fn into_slot(self) -> $slot { self.slot }
+        }
+
         impl From<$prefix> for Ipv6Net
         {
             #[inline] fn from(value: $prefix) -> Self {
@@ -114,8 +195,8 @@ impl Ipv6Prefix56
         if len > Self::MAX_LEN {
             Err(IpPrefixError::PrefixLenError)
         } else {
-            let addr = ((u128::from(addr) >> 64) as u64 & u64::bitmask(len)) | u64::from(len);
-            Ok(Self { addr })
+            let slot = ((u128::from(addr) >> 64) as u64 & u64::bitmask(len)) | u64::from(len);
+            Ok(Self { slot })
         }
     }
 }
@@ -128,8 +209,8 @@ impl Ipv6Prefix120
         if len > Self::MAX_LEN {
             Err(IpPrefixError::PrefixLenError)
         } else {
-            let addr = (u128::from(addr) & u128::bitmask(len)) | u128::from(len);
-            Ok(Self { addr })
+            let slot = (u128::from(addr) & u128::bitmask(len)) | u128::from(len);
+            Ok(Self { slot })
         }
     }
 }
@@ -139,7 +220,7 @@ impl From<Ipv6Prefix56> for Ipv6Prefix120
 {
     #[inline]
     fn from(value: Ipv6Prefix56) -> Self {
-        Ipv6Prefix120 { addr: u128::from(value.network()) | (value.len() as u128) }
+        Ipv6Prefix120 { slot: u128::from(value.network()) | (value.len() as u128) }
     }
 }
 
@@ -149,8 +230,8 @@ impl TryFrom<Ipv6Prefix120> for Ipv6Prefix56
 
     fn try_from(value: Ipv6Prefix120) -> Result<Self, Self::Error> {
         if value.len() <= 56 {
-            let addr = (value.addr >> 64) as u64 | (value.len() as u64);
-            Ok(Self { addr })
+            let addr = (value.slot >> 64) as u64 | (value.len() as u64);
+            Ok(Self { slot: addr })
         } else {
             Err(IpPrefixError::PrefixLenError)
         }
