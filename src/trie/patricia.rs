@@ -51,7 +51,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             branching: self.branching.clone(),
             leaves: TrieLeaves(
                 self.leaves.0.iter()
-                    .map(|leaf| Leaf::new(*leaf.prefix(), f(&leaf.get().1)))
+                    .map(|leaf| Leaf::new(*leaf.prefix(), f(leaf.get().1)))
                     .collect()
             )
         }
@@ -85,7 +85,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
                 IpPrefixCoverage::SameRange => {
                     let leaf = self.leaves.remove_last().unwrap();
                     let mut v = <Leaf<K,V> as Into<(K,V)>>::into(leaf).1;
-                    std::mem::swap(&mut v, &mut self.leaves[l].get_mut().1);
+                    std::mem::swap(&mut v, self.leaves[l].get_mut().1);
                     return Some(v);
                 }
             }
@@ -293,7 +293,7 @@ impl<K,V> Index<LeafIndex> for RadixTrie<K,V>
 {
     type Output = K;
     #[inline]
-    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix() }
+    fn index(&self, i: LeafIndex) -> &Self::Output { self.leaves[i].prefix() }
 }
 
 

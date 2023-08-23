@@ -254,7 +254,7 @@ impl<K: IpPrefix, V> Index<LeafIndex> for LevelCompressedTrie<K,V>
 {
     type Output = K;
     #[inline]
-    fn index(&self, i: LeafIndex) -> &Self::Output { &self.leaves[i].prefix() }
+    fn index(&self, i: LeafIndex) -> &Self::Output { self.leaves[i].prefix() }
 }
 
 

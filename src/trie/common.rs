@@ -19,10 +19,11 @@ impl<K,V> Leaf<K,V> {
     pub fn get_mut(&mut self) -> (&K,&mut V) { (&self.prefix, &mut self.value) }
 }
 
-impl<K,V> Into<(K,V)> for Leaf<K,V> {
-    fn into(self) -> (K, V) { (self.prefix, self.value) }
+impl<K,V> From<Leaf<K,V>> for (K,V) {
+    fn from(leaf: Leaf<K, V>) -> Self {
+        (leaf.prefix, leaf.value)
+    }
 }
-
 
 impl<K: IpPrefix, V> TrieLeaves<Leaf<K, V>>
 {

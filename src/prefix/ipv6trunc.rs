@@ -10,6 +10,7 @@ use super::*;
 ///            ip prefix slot                length
 /// ```
 /// The resulting prefix is 4 times shorter that the corresponding Ipv6 generic prefix.
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv6Prefix56 { slot: u64 }
 
@@ -36,6 +37,7 @@ impl IpPrefix for Ipv6Prefix56
 ///                      ip prefix slot                         length
 /// ```
 /// The resulting prefix is twice as short as the corresponding Ipv6 generic prefix.
+#[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
 pub struct Ipv6Prefix120 { slot: u128 }
 
@@ -65,7 +67,10 @@ macro_rules! ipv6prefix {
             /// ```text
             /// |------------ ip prefix slot ------------|-- length --|
             /// ```
-            /// Results are unpredictable if the last byte is not a valid length.
+            ///
+            /// # Safety
+            /// Results are unpredictable if the last byte is not a valid length
+            /// (i.e. exceeds [`Self::MAX_LEN`])
             ///
             /// A safe version of this function exists as [`Self::from_slot`]
             /// or also [`Self::try_from_slot] which doesn’t panic.
