@@ -241,6 +241,9 @@ impl<P:IpPrefix> RTrieSet<P>
     pub fn iter(&self) -> impl Iterator<Item=&P> + '_ {
         self.0.leaves.0.iter().map(Leaf::prefix)
     }
+
+    #[inline]
+    pub fn info(&self) { self.0.info() }
 }
 
 impl<P:IpPrefix> Default for RTrieSet<P>
@@ -278,6 +281,9 @@ impl<P:IpPrefix> LCTrieSet<P>
     #[inline]
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> NonZeroUsize { self.0.len() }
+
+    #[inline]
+    pub fn info(&self) { self.0.info() }
 
     /// Checks if an element is present (exact match).
     ///

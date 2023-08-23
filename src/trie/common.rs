@@ -107,9 +107,9 @@ impl NodeIndex {
 }
 
 impl LeafIndex {
-    #[inline] pub(crate) fn root_leaf() -> Self { Self(!0) }
-    #[inline] pub(crate) fn is_root_leaf(&self) -> bool { !self.0 == 0 }
-    #[inline] pub(crate) fn index(&self) -> usize { !self.0 as usize }
+    #[inline] pub(crate) fn root_leaf() -> Self { Self(0) }
+    #[inline] pub(crate) fn is_root_leaf(&self) -> bool { self.0 == 0 }
+    #[inline] pub(crate) fn index(&self) -> usize { self.0 as usize }
 }
 
 impl BranchingIndex {
@@ -123,7 +123,7 @@ impl From<NodeIndex> for LeafIndex
     #[inline]
     fn from(i: NodeIndex) -> Self {
         debug_assert!( i.is_leaf() );
-        Self(i.0)
+        Self(!i.0)
     }
 }
 
@@ -132,7 +132,7 @@ impl From<usize> for LeafIndex
     #[inline]
     fn from(i: usize) -> Self {
         debug_assert!( i <= INDEX_MAX );
-        Self(!(i as i32))
+        Self(i as i32)
     }
 }
 
@@ -155,7 +155,7 @@ impl From<NodeIndex> for BranchingIndex
 }
 
 impl From<LeafIndex> for NodeIndex {
-    #[inline] fn from(i: LeafIndex) -> Self { Self(i.0) }
+    #[inline] fn from(i: LeafIndex) -> Self { Self(!i.0) }
 }
 
 impl From<BranchingIndex> for NodeIndex {
@@ -163,7 +163,7 @@ impl From<BranchingIndex> for NodeIndex {
 }
 
 impl PartialEq<LeafIndex> for NodeIndex {
-    #[inline] fn eq(&self, other: &LeafIndex) -> bool { self.0 == other.0 }
+    #[inline] fn eq(&self, other: &LeafIndex) -> bool { self.0 == !other.0 }
 }
 
 impl PartialEq<BranchingIndex> for NodeIndex {
@@ -175,13 +175,13 @@ impl PartialEq<NodeIndex> for BranchingIndex {
 }
 
 impl PartialEq<NodeIndex> for LeafIndex {
-    #[inline] fn eq(&self, other: &NodeIndex) -> bool { self.0 == other.0 }
+    #[inline] fn eq(&self, other: &NodeIndex) -> bool { self.0 == !other.0 }
 }
 
 
 
 impl fmt::Debug for LeafIndex {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Display::fmt(&self.0, f) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Display::fmt(&(!self.0), f) }
 }
 
 impl fmt::Debug for BranchingIndex {

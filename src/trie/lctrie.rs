@@ -218,18 +218,18 @@ impl<K:IpPrefix,V> LevelCompressedTrie<K,V>
 
     pub fn info(&self)
     {
-        let mut counts = [0;128];
-        self.branching.iter()
-            .for_each(|(_,c)| counts[c.size as usize] += 1 );
-
+        println!("LC-TRIE info");
         println!("{} branching, {} leaves", self.branching.iter().count(), self.leaves.len());
         println!("root: {} children (2^{}), {} shift", self.branching[0.into()].children(), self.branching[0.into()].size, self.branching[0.into()].shift);
 
         let mut counts = [0;128];
         self.branching.iter()
             .for_each(|(_,c)| counts[c.size as usize] += 1 );
-        println!("size: {:?}", counts);
-
+        print!("children:");
+        counts.iter().enumerate().filter(|(_,&c)| c !=0 )
+            .for_each(|(n,&c)| print!(" {}->{}", (1<<n), c));
+        println!();
+/*
         let mut counts = [0;128];
         self.branching.iter()
             .for_each(|(_,c)| counts[c.shift as usize] += 1 );
@@ -243,6 +243,10 @@ impl<K:IpPrefix,V> LevelCompressedTrie<K,V>
                 counts[(c.shift - p.shift - p.size) as usize] += 1
             } );
         println!("shift: {:?}", counts);
+*/
+        let branching =    self.branching.memzone.len() * std::mem::size_of::<NodeIndex>()/1000;
+        let leaves = self.leaves.len() * std::mem::size_of::<Leaf<K,V>>()/1000;
+        println!("memory: {:?}k + {:?}k = {:?}k", branching, leaves, branching+leaves);
 
         println!();
     }

@@ -230,6 +230,18 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
         let (_,l) = self.inner_lookup(k);
         self.leaves[l].get_mut()
     }
+
+    pub fn info(&self)
+    {
+        println!("PATRICIA TRIE info");
+        println!("{} branching, {} leaves", self.branching.0.len(), self.leaves.len());
+
+        let branching =    self.branching.0.len() * std::mem::size_of::<Branching>()/1000;
+        let leaves = self.leaves.len() * std::mem::size_of::<Leaf<K,V>>()/1000;
+        println!("memory: {:?}k + {:?}k = {:?}k", branching, leaves, branching+leaves);
+
+        println!();
+    }
 }
 
 
@@ -253,7 +265,8 @@ impl<K:std::fmt::Display, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
         self.branching.0.iter()
             .try_for_each(|b|
                 b.child.iter()
-                    .filter(|&c| *c != b.escape && c.is_leaf())
+                    .filter(|&&c| c.is_leaf())
+                    .filter(|&&c| c != b.escape) // avoid redundant link
                     .try_for_each(|c|
                         writeln!(dot, "{0:?} [label=\"[{0:?}] {1}\"]", c, self[c.as_leaf()])
                     ))?;
@@ -579,7 +592,6 @@ impl BranchingTree
             Ok((n, _)) => n
         }
     }
-
 }
 
 
