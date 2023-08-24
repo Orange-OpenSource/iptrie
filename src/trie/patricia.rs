@@ -33,6 +33,11 @@ impl<K,V> RadixTrie<K,V>
         }
     }
 
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.leaves.0.shrink_to_fit();
+        self.branching.0.shrink_to_fit();
+    }
 }
 
 impl<K:IpPrefix,V> RadixTrie<K,V>

@@ -86,6 +86,9 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     #[inline]
     pub fn compress(self) -> LCTrieMap<K,V> { LCTrieMap(LevelCompressedTrie::new(self.0)) }
 
+    #[inline]
+    pub fn shrink_to_fit(&mut self) { self.0.shrink_to_fit() }
+
     /// Inserts a new entry in the map.
     ///
     /// If the specified key already exists in the map, then the previous associated

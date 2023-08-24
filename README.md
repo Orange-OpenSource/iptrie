@@ -10,10 +10,8 @@ This crate implements tries dedicated to IP addresses and prefixes lookup.
 It provides sets and maps for Ipv4, Ipv6 and both mixed.
 
 Each structure exists in two versions:
-* a first one based on Patricia trie which can be viewed as a standard map or set  
-  with a lookup operation for finding the longest prefix match
-* a compressed one based one Level-Compressed trie (LC-Trie), optimized for lookup operation
-  (longest prefix match) but which can’t be modified (planned to do in next releases)
+* a first one based on Patricia trie which can be viewed as a standard map or set with a lookup operation for finding the longest prefix match
+* a compressed one based one Level-Compressed trie (LC-Trie), optimized for lookup operation (longest prefix match) but which can’t be modified
 
 
 ## Example
@@ -92,3 +90,41 @@ Ip addresses.
 | LC-Trie _(this crate)_       |    47 ns    |    24 ns    |
 
 This time, the lookup based on LC-Trie has the best performances.
+
+## Building the tries
+
+### Time consuming
+
+We built lookup tables from 100k of random prefixes for Ipv4
+and the same for Ipv6, and then we built lookup tables from 100k 
+out of a real BGP table for Ipv4 and the same for Ipv6.
+
+The BGP table is read and inserted in prefix order (i.e. highest prefix in first) which
+is the best case for building a prefix trie.
+
+|                              | Ipv4 random | Ipv6 random | Ipv4 BGP | Ipv6 BGP |
+|------------------------------|:-----------:|:-----------:|:--------:|:--------:|
+| IpLookupTable                |    21 ms    |    58 ms    |  24 ms   |  95 ms   |
+| Patricia trie _(this crate)_ |    13 ms    |    16 ms    |  12 ms   |   8 ms   |
+| LC-Trie _(this crate)_       |    15 ms    |    21 ms    |  17 ms   |  14 ms   |
+
+
+Note that building a LC-Trie consists of building a Patricia Trie
+then compressing it.
+
+### Memory
+
+We use a real BGP table with more than 1M Ipv4 prefixes 
+and more than 175k Ipv6 prefixes.
+
+|                              | Ipv4 BGP | Ipv6 BGP |
+|------------------------------|:--------:|:--------:|
+| IpLookupTable                |  5.7 M   |  2.2 M   |
+| Patricia trie _(this crate)_ |  28.8 M  |  9.1 M   |
+| LC-Trie _(this crate)_       |  19.4 M  |  7.6 M   |
+
+
+The `IpLookupTable` is definitively the good choice for applications
+with limited memory.
+
+_(I guess I will work on this for next releases)_

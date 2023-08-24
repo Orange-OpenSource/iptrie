@@ -52,6 +52,9 @@ impl<P:IpPrefix> RTrieSet<P>
     #[inline]
     pub fn compress(self) -> LCTrieSet<P> { LCTrieSet(LevelCompressedTrie::new(self.0)) }
 
+    #[inline]
+    pub fn shrink_to_fit(&mut self) { self.0.shrink_to_fit() }
+
     /// Inserts a new element in the set.
     ///
     /// If the specified element already exists in the set, `false` is returned.

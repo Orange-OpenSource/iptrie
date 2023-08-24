@@ -39,6 +39,8 @@ impl<K:IpPrefix,V>  LevelCompressedTrie<K,V> {
 
         lctrie.compress(&trie, BranchingIndex::root(), BranchingIndex::root(), &mut done, comp);
         lctrie.skip_redundant_parent(BranchingIndex::root(), LeafIndex::root_leaf(), BranchingIndex::root());
+        lctrie.branching.memzone.shrink_to_fit();
+        lctrie.leaves.0.shrink_to_fit();
         lctrie
     }
 
