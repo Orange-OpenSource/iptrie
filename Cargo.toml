@@ -10,11 +10,11 @@ keywords = ["ip","trie"]
 categories = ["data-structures", "algorithms"]
 
 [dependencies]
-ipnet = "2.8"
+ipnet = "2.9.0"
 
 [dev-dependencies]
-libc = "0.2"
-rand = "0.8"
+libc = "0.2.151"
+rand = "0.8.5"
 ip_network_table-deps-treebitmap = "0.5"
 
 [profile.release]
