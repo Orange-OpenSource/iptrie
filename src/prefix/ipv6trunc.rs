@@ -17,7 +17,6 @@ pub struct Ipv6Prefix56 { slot: u64 }
 impl IpPrefix for Ipv6Prefix56
 {
     type Slot = u64;
-    #[inline] fn root() -> Self { Self { slot: 0 } }
     #[inline] fn bitslot(&self) -> Self::Slot { self.slot }
     #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.slot & !255 }
     #[inline] fn len(&self) -> u8 { self.slot as u8 }
@@ -25,6 +24,11 @@ impl IpPrefix for Ipv6Prefix56
     const MAX_LEN: u8 = 56;
     type Addr = Ipv6Addr;
     #[inline] fn network(&self) -> Self::Addr { ((self.bitslot_trunc() as u128) << 64).into() }
+}
+
+impl IpRootPrefix for Ipv6Prefix56
+{
+    #[inline] fn root() -> Self { Self { slot: 0 } }
 }
 
 /// An Ipv6 prefix limited to 120 bits and encoded as `u128` (EXPERIMENTAL)
@@ -44,7 +48,6 @@ pub struct Ipv6Prefix120 { slot: u128 }
 impl IpPrefix for Ipv6Prefix120
 {
     type Slot = u128;
-    #[inline] fn root() -> Self { Self { slot: 0 } }
     #[inline] fn bitslot(&self) -> Self::Slot { self.slot }
     #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.slot & !255 }
     #[inline] fn len(&self) -> u8 { self.slot as u8 }
@@ -54,6 +57,10 @@ impl IpPrefix for Ipv6Prefix120
     #[inline] fn network(&self) -> Self::Addr { (self.slot & !255).into() }
 }
 
+impl IpRootPrefix for Ipv6Prefix120
+{
+    #[inline] fn root() -> Self { Self { slot: 0 } }
+}
 
 macro_rules! ipv6prefix {
     ($prefix:ident, $slot:ty) => {

@@ -24,7 +24,7 @@ pub type Ipv4LCTrieSet = LCTrieSet<Ipv4Prefix>;
 /// Convenient alias for LC-Trie set of Ipv6 prefixes
 pub type Ipv6LCTrieSet = LCTrieSet<Ipv6Prefix>;
 
-impl<P:IpPrefix> RTrieSet<P>
+impl<P:IpRootPrefix> RTrieSet<P>
 {
     /// Creates a new set which contains the root prefix.
     #[inline]
@@ -34,8 +34,11 @@ impl<P:IpPrefix> RTrieSet<P>
     ///
     /// The returned set already contains the root prefix.
     #[inline]
-    pub fn with_capacity(capacity:usize) -> Self { Self(RadixTrie::new((), capacity)) }
+    pub fn with_capacity(capacity: usize) -> Self { Self(RadixTrie::new((), capacity)) }
+}
 
+impl<P:IpPrefix> RTrieSet<P>
+{
     /// Returns the size of the set.
     ///
     /// Notice that it never equals zero since the top prefix is
@@ -151,8 +154,8 @@ impl<P:IpPrefix> RTrieSet<P>
     /// use ipnet::Ipv4Net;
     /// let mut trie = RTrieSet::new();
     ///
-    /// let addr1 = Ipv4Addr::new(1,1,1,1);;
-    /// let addr2 = Ipv4Addr::new(1,1,1,2);;
+    /// let addr1 = Ipv4Addr::new(1,1,1,1);
+    /// let addr2 = Ipv4Addr::new(1,1,1,2);
     /// let ip20 = Ipv4Net::new(addr1, 20).unwrap();
     /// let ip20b = Ipv4Net::new(addr2, 20).unwrap();
     ///
@@ -185,8 +188,8 @@ impl<P:IpPrefix> RTrieSet<P>
     /// use ipnet::Ipv4Net;
     /// let mut trie = RTrieSet::new();
     ///
-    /// let addr1 = Ipv4Addr::new(1,1,1,1);;
-    /// let addr2 = Ipv4Addr::new(1,1,1,2);;
+    /// let addr1 = Ipv4Addr::new(1,1,1,1);
+    /// let addr2 = Ipv4Addr::new(1,1,1,2);
     /// let ip20 = Ipv4Net::new(addr1, 20).unwrap();
     /// let ip20b = Ipv4Net::new(addr2, 20).unwrap();
     ///
@@ -216,7 +219,7 @@ impl<P:IpPrefix> RTrieSet<P>
     /// use std::net::Ipv4Addr;
     /// let mut trie = Ipv4RTrieSet::new();
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -249,7 +252,7 @@ impl<P:IpPrefix> RTrieSet<P>
     pub fn info(&self) { self.0.info() }
 }
 
-impl<P:IpPrefix> Default for RTrieSet<P>
+impl<P:IpRootPrefix> Default for RTrieSet<P>
 {
     #[inline]
     fn default() -> Self {
@@ -265,7 +268,7 @@ impl<P:IpPrefix> Extend<P> for RTrieSet<P>
     }
 }
 
-impl<P:IpPrefix> FromIterator<P> for RTrieSet<P>
+impl<P:IpRootPrefix> FromIterator<P> for RTrieSet<P>
 {
     fn from_iter<I:IntoIterator<Item=P>>(iter: I) -> Self
     {
@@ -329,7 +332,7 @@ impl<P:IpPrefix> LCTrieSet<P>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -363,7 +366,7 @@ impl<P:IpPrefix> LCTrieSet<P>
     /// use std::net::Ipv4Addr;
     /// let mut trie = Ipv4RTrieSet::new();
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -395,7 +398,7 @@ impl<P:IpPrefix> LCTrieSet<P>
     }
 }
 
-impl<P:IpPrefix> FromIterator<P> for LCTrieSet<P>
+impl<P:IpRootPrefix> FromIterator<P> for LCTrieSet<P>
 {
     fn from_iter<I:IntoIterator<Item=P>>(iter: I) -> Self
     {

@@ -40,7 +40,7 @@ impl<K,V> RadixTrie<K,V>
     }
 }
 
-impl<K:IpPrefix,V> RadixTrie<K,V>
+impl<K:IpRootPrefix,V> RadixTrie<K,V>
 {
     pub(crate) fn new(value: V, capacity: usize) -> Self
     {
@@ -49,7 +49,10 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
             leaves: TrieLeaves::new(capacity, K::root(), value)
         }
     }
+}
 
+impl<K:IpPrefix,V> RadixTrie<K,V>
+{
     pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> RadixTrie<K, W>
     {
         RadixTrie {

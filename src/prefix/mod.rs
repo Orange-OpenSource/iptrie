@@ -7,6 +7,7 @@ mod ipstd;
 mod cover;
 
 #[cfg(test)] mod tests;
+mod ipv6netaddr;
 
 use std::error::Error;
 pub use slot::*;
@@ -22,15 +23,17 @@ use std::str::FromStr;
 
 use ipnet::{Ipv4Net, Ipv6Net};
 
+pub trait IpRootPrefix: IpPrefix {
+    /// Root prefix has a length of 0
+    fn root() -> Self; // root prefix, of len =0
+}
+
 /// Ip prefix (as bit prefix)
 #[allow(clippy::len_without_is_empty)]
 pub trait IpPrefix: Debug+Clone+Copy
 {
     /// The slot manipulated inside this prefix
     type Slot: BitSlot;
-
-    /// Root prefix has a length of 0
-    fn root() -> Self; // root prefix, of len =0
 
     /// The inner slot _as is_
     ///
@@ -85,7 +88,8 @@ pub enum IpPrefixError {
     /// For Ipv6, this error is generated if the specified length
     /// is greater than 128 for an  [`Ipv6Prefix`] or [`Ipv6Net`]
     /// or greater than 120 for an [`Ipv6Prefix120`]
-    /// or greater than 56 for an [`Ipv6Prefix56`].
+    /// or greater than 56 for an [`Ipv6Prefix56`]
+    /// or not equal to 64 for an [`Ipv6NetAddr`]
     PrefixLenError,
 
     /// The parsed string does not contains a valid Ip address.

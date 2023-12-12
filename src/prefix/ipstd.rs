@@ -100,7 +100,6 @@ macro_rules! ipprefix {
         impl IpPrefix for $prefix
         {
             type Slot = $slot;
-            #[inline] fn root() -> Self { Self { addr: 0, len: 0 } }
             #[inline] fn bitslot(&self) -> Self::Slot { self.addr }
             #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.addr }
             #[inline] fn len(&self) -> u8 { self.len }
@@ -108,6 +107,11 @@ macro_rules! ipprefix {
             const MAX_LEN: u8 = <Self as IpPrefix>::Slot::LEN;
             type Addr = $ipaddr;
             #[inline] fn network(&self) -> Self::Addr { self.addr.into() }
+        }
+
+        impl IpRootPrefix for $prefix
+        {
+            #[inline] fn root() -> Self { Self { addr: 0, len: 0 } }
         }
 
         impl From<$ipnet> for $prefix
@@ -150,7 +154,6 @@ macro_rules! ipprefix {
         impl IpPrefix for $ipnet
         {
             type Slot = $slot;
-            #[inline] fn root() -> Self { Self::default() }
             #[inline] fn bitslot(&self) -> Self::Slot { <$slot>::from(self.addr()) }
             #[inline] fn bitslot_trunc(&self) -> Self::Slot { <$slot>::from(self.network()) }
             #[inline] fn len(&self) -> u8 { self.prefix_len() }
@@ -160,10 +163,14 @@ macro_rules! ipprefix {
             #[inline] fn network(&self) -> Self::Addr { self.network() }
         }
 
+        impl IpRootPrefix for $ipnet
+        {
+            #[inline] fn root() -> Self { Self::default() }
+        }
+
         impl IpPrefix for $ipaddr
         {
             type Slot = $slot;
-            #[inline] fn root() -> Self { 0.into() }
             #[inline] fn bitslot(&self) -> Self::Slot { Self::Slot::from(*self) }
             #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.bitslot() }
             #[inline] fn len(&self) -> u8 { Self::Slot::LEN }

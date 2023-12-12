@@ -3,6 +3,7 @@ use super::*;
 use ipnet::Ipv6Net;
 use rand::*;
 use rand::distributions::*;
+use crate::prefix::ipv6netaddr::Ipv6NetAddr;
 
 #[test]
 fn slot_mask()
@@ -19,9 +20,9 @@ fn slot_root() {
 
     assert_eq!( u128::from(Ipv6Prefix::root().network()), 0);
     assert_eq!( Ipv6Prefix::root().len(), 0);
-    assert_eq!(u128::from(Ipv6Prefix120::root().network()), 0);
+    assert_eq!( u128::from(Ipv6Prefix120::root().network()), 0);
     assert_eq!( Ipv6Prefix::root().len(), 0);
-    assert_eq!(u128::from(Ipv6Prefix56::root().network()), 0);
+    assert_eq!( u128::from(Ipv6Prefix56::root().network()), 0);
     assert_eq!( Ipv6Prefix::root().len(), 0);
 }
 
@@ -68,6 +69,19 @@ fn prefix_ipv6_trunc<P>()
 #[test] fn prefix_ipv6_120_trunc() { prefix_ipv6_trunc::<Ipv6Prefix120>() }
 #[test] fn prefix_ipv6_56_trunc() { prefix_ipv6_trunc::<Ipv6Prefix56>() }
 
+#[test]
+fn prefix_ipnetaddr()
+{
+    let mut rng = thread_rng();
+    let addr = Uniform::<u128>::from(0..=u128::MAX);
+
+    (0..10_000).for_each(|_| {
+        let addr = Ipv6Addr::from(addr.sample(&mut rng));
+        let ipnetaddr = Ipv6NetAddr::new(addr);
+        let ipnet = Ipv6Net::new(addr,64).unwrap();
+        assert_eq!( ipnet, ipnetaddr );
+    })
+}
 
 #[test]
 fn prefix_eq()
@@ -90,10 +104,10 @@ fn prefix_eq()
                 let ipnet56a =  Ipv6Prefix56::try_from(ipnet).unwrap();
                 let ipnet56b =  Ipv6Prefix56::try_from(ipnet120).unwrap();
 
-                assert!( ipnet56a.covers_equally(&ipnet) );
-                assert!( ipnet56a.covers_equally(&ipnet120) );
-                assert!( ipnet.covers_equally(&ipnet56b) );
-                assert!( ipnet120.covers_equally(&ipnet56b) );
+                assert_eq!( ipnet56a, ipnet );
+                assert_eq!( ipnet56a, ipnet120 );
+                assert_eq!( ipnet56a, ipnet56b );
+                assert_eq!( ipnet56a, ipnet56b );
 
                 assert_eq!( ipnet120.bitslot_trunc(), Ipv6Prefix120::from(ipnet56a).bitslot_trunc());
                 assert_eq!( ipnet120.bitslot(), Ipv6Prefix120::from(ipnet56a).bitslot());
@@ -101,8 +115,8 @@ fn prefix_eq()
                 assert_eq!( ipnet120, Ipv6Prefix120::from(ipnet56a));
                 assert_eq!( Ipv6Prefix120::from(ipnet56b), ipnet120);
 
-                assert!( ipnet56a.covers_equally(&Ipv6Prefix120::from(ipnet56a)));
-                assert!( Ipv6Prefix120::from(ipnet56b).covers_equally(&ipnet56b));
+                assert_eq!( ipnet56a, Ipv6Prefix120::from(ipnet56a));
+                assert_eq!( Ipv6Prefix120::from(ipnet56b), ipnet56b);
             } else {
                 assert_eq!( Ipv6Prefix56::try_from(ipnet), Err(IpPrefixError::PrefixLenError))
             }
@@ -153,8 +167,7 @@ fn coverage_std_fns()
     coverage_std_fn_for::<Ipv6Prefix56>();
     coverage_std_fn_for::<Ipv6Prefix120>();
 
-    let err : IpPrefixError = ::ipnet::PrefixLenError.into();
-    dbg!(err.clone());
+    let _err : IpPrefixError = ::ipnet::PrefixLenError.into();
     let _ : IpPrefixError = "a".parse::<Ipv4Addr>().unwrap_err().into();
     let err : IpPrefixError = "a".parse::<Ipv4Net>().unwrap_err().into();
     let _ = err.to_string();

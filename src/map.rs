@@ -28,7 +28,7 @@ pub type Ipv4LCTrieMap<V> = LCTrieMap<Ipv4Prefix,V>;
 pub type Ipv6LCTrieMap<V> = LCTrieMap<Ipv6Prefix,V>;
 
 
-impl<K:IpPrefix,V:Default> RTrieMap<K,V>
+impl<K:IpRootPrefix,V:Default> RTrieMap<K,V>
 {
     /// Create a new map.
     ///
@@ -43,9 +43,23 @@ impl<K:IpPrefix,V:Default> RTrieMap<K,V>
     pub fn with_capacity(capacity:usize) -> Self { Self::with_root_and_capacity(V::default(), capacity)}
 }
 
-impl<K:IpPrefix,V:Default> Default for RTrieMap<K,V>
+impl<K:IpRootPrefix,V:Default> Default for RTrieMap<K,V>
 {
     #[inline] fn default() -> Self { Self::with_root(V::default()) }
+}
+
+impl<K:IpRootPrefix,V> RTrieMap<K,V>
+{
+    /// Creates a new trie map with the specified value associated to the
+    /// root prefix.
+    #[inline]
+    pub fn with_root(root: V) -> Self { Self::with_root_and_capacity(root, 1000) }
+
+    /// Creates a new trie map with a initial capacity.
+    #[inline]
+    pub fn with_root_and_capacity(root: V, capacity: usize) -> Self {
+        Self(RadixTrie::new(root, capacity))
+    }
 }
 
 impl<K:IpPrefix,V> RTrieMap<K,V>
@@ -66,17 +80,6 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     #[inline]
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> NonZeroUsize { self.0.len() }
-
-    /// Creates a new trie map with the specified value associated to the
-    /// root prefix.
-    #[inline]
-    pub fn with_root(root: V) -> Self { Self::with_root_and_capacity(root, 1000) }
-
-    /// Creates a new trie map with a initial capacity.
-    #[inline]
-    pub fn with_root_and_capacity(root: V, capacity: usize) -> Self {
-        Self(RadixTrie::new(root, capacity))
-    }
 
     /// Compress this Patricia trie in a LC-Trie.
     ///
@@ -125,7 +128,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -158,7 +161,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     ///
@@ -188,7 +191,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     ///
@@ -222,7 +225,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -299,7 +302,7 @@ impl<K:IpPrefix,V> Extend<(K, V)> for RTrieMap<K,V>
     }
 }
 
-impl<K:IpPrefix,V:Default> FromIterator<(K, V)> for RTrieMap<K,V>
+impl<K:IpRootPrefix,V:Default> FromIterator<(K, V)> for RTrieMap<K,V>
 {
     fn from_iter<I:IntoIterator<Item=(K,V)>>(iter: I) -> Self
     {
@@ -334,7 +337,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -366,7 +369,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::new();
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     ///
@@ -402,7 +405,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
-    /// let addr = Ipv4Addr::new(1,1,1,1);;
+    /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
@@ -509,7 +512,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     }
 }
 
-impl<K:IpPrefix,V:Default> FromIterator<(K,V)> for LCTrieMap<K,V>
+impl<K:IpRootPrefix,V:Default> FromIterator<(K,V)> for LCTrieMap<K,V>
 {
     fn from_iter<I:IntoIterator<Item=(K,V)>>(iter: I) -> Self {
         RTrieMap::from_iter(iter).compress()
