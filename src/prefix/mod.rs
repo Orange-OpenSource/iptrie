@@ -3,15 +3,16 @@
 
 mod slot;
 mod ipv6trunc;
+mod ipv6netaddr;
 mod ipstd;
 mod cover;
 
 #[cfg(test)] mod tests;
-mod ipv6netaddr;
 
 use std::error::Error;
 pub use slot::*;
 pub use ipv6trunc::*;
+pub use ipv6netaddr::Ipv6NetAddr;
 pub use ipstd::*;
 pub use cover::*;
 
