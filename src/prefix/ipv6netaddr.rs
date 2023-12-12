@@ -77,6 +77,21 @@ impl TryFrom<Ipv6Prefix120> for Ipv6NetAddr
         }
     }
 }
+
+impl From<u64> for Ipv6NetAddr
+{
+    #[inline]
+    fn from(addr: u64) -> Self { Self { addr } }
+}
+
+
+impl From<Ipv6NetAddr> for u64
+{
+    #[inline]
+    fn from(addr: Ipv6NetAddr) -> u64 { addr.addr }
+}
+
+
 impl Display for Ipv6NetAddr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ip = (*self).into();
