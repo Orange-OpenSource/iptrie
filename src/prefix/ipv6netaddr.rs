@@ -1,4 +1,3 @@
-#! Ipv6 prefix of fixed length of 64 bits
 
 use std::fmt;
 use std::fmt::{Debug, Display};
@@ -7,6 +6,19 @@ use std::str::FromStr;
 use ipnet::Ipv6Net;
 use crate::{IpPrefix, IpPrefixError, Ipv6Prefix120};
 
+/// An Ipv6 prefix of fixed length of 64 bits
+///
+/// This prefix is commonly used to carry the network
+/// address of a unicast Ipv6 address.
+/// It takes exactly 64 bits.
+/// ```text
+/// |------------ 64 bits ---------------|
+///            ip prefix slot
+/// ```
+/// To deal with a short prefix but without a fixed length,
+/// consider [`Ipv6Prefix56`] which use one char to
+/// store its length.
+#[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Ipv6NetAddr {
     addr: u64
@@ -35,6 +47,12 @@ impl Ipv6NetAddr
     {
         Self { addr: (u128::from(addr) >> 64) as u64 }
     }
+
+    #[inline]
+    pub fn into_slot(self) -> u64 { self.addr }
+
+    #[inline]
+    pub fn from_slot(addr: u64) -> Self { Self { addr } }
 }
 
 impl From<Ipv6NetAddr> for Ipv6Net
