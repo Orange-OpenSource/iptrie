@@ -178,7 +178,6 @@ fn coverage_std_fn_for<P>()
         P: Default+Clone+Hash+Eq+Debug+Display
 {
     let p = P::default();
-    dbg!(&p);
     assert!(p == p.clone());
     assert_eq!(p.to_string(), p.clone().to_string());
     let _ = HashSet::<P>::from_iter(std::iter::once(p));

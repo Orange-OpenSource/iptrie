@@ -8,6 +8,7 @@ mod ipstd;
 mod cover;
 
 #[cfg(test)] mod tests;
+mod private;
 
 use std::error::Error;
 pub use slot::*;
@@ -23,6 +24,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 use ipnet::{Ipv4Net, Ipv6Net};
+pub use crate::prefix::private::IpPrivatePrefix;
 
 pub trait IpRootPrefix: IpPrefix {
     /// Root prefix has a length of 0
@@ -31,7 +33,7 @@ pub trait IpRootPrefix: IpPrefix {
 
 /// Ip prefix (as bit prefix)
 #[allow(clippy::len_without_is_empty)]
-pub trait IpPrefix: Debug+Clone+Copy
+pub trait IpPrefix: IpPrivatePrefix+Debug+Clone+Copy
 {
     /// The slot manipulated inside this prefix
     type Slot: BitSlot;

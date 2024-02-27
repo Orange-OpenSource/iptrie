@@ -14,7 +14,7 @@ use std::hash::Hash;
 /// for truncated Ipv6 prefixes.
 #[doc(hidden)]
 pub trait BitSlot :
-Clone + Copy + Default + Debug + Binary + Eq + PartialEq + Hash
+  Clone + Copy + Default + Debug + Binary + Eq + PartialEq + Hash
 + Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>
 + Shl<u8,Output=Self> + Shr<u8,Output=Self>
 {
