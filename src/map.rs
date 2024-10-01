@@ -5,7 +5,6 @@ use crate::set::*;
 
 use crate::prefix::*;
 
-#[cfg(feature = "ipnet")] use ipnet::IpNet;
 #[cfg(feature = "graphviz")] pub use crate::trie::graphviz::DotWriter;
 #[cfg(feature = "graphviz")] use std::fmt::Display;
 use crate::trie::common::Leaf;

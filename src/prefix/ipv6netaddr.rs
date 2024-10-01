@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display};
 use std::net::Ipv6Addr;
 use std::str::FromStr;
 use ipnet::Ipv6Net;
-use crate::{IpPrefix, IpPrefixError, Ipv6Prefix120};
+use crate::{IpPrefix, IpPrefixError, Ipv6Prefix, Ipv6Prefix120};
 
 /// An Ipv6 prefix of fixed length of 64 bits
 ///
@@ -62,6 +62,13 @@ impl From<Ipv6NetAddr> for Ipv6Net
     }
 }
 
+impl From<Ipv6NetAddr> for Ipv6Prefix
+{
+    #[inline] fn from(value: Ipv6NetAddr) -> Self {
+        Ipv6Prefix::new(value.network(), value.len()).unwrap()
+    }
+}
+
 impl From<Ipv6NetAddr> for Ipv6Prefix120
 {
     #[inline] fn from(value: Ipv6NetAddr) -> Self {
@@ -75,6 +82,19 @@ impl TryFrom<Ipv6Net> for Ipv6NetAddr
     type Error = IpPrefixError;
     #[inline]
     fn try_from(value: Ipv6Net) -> Result<Self, Self::Error> {
+        if value.len() == 64 {
+            Ok(Self { addr: (value.bitslot() >> 64) as u64 })
+        } else {
+            Err(IpPrefixError::PrefixLenError)
+        }
+    }
+}
+
+impl TryFrom<Ipv6Prefix> for Ipv6NetAddr
+{
+    type Error = IpPrefixError;
+    #[inline]
+    fn try_from(value: Ipv6Prefix) -> Result<Self, Self::Error> {
         if value.len() == 64 {
             Ok(Self { addr: (value.bitslot() >> 64) as u64 })
         } else {

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, iter, vec};
 use std::ops::{Index, IndexMut};
 use crate::prefix::IpPrefix;
 
@@ -7,21 +7,18 @@ pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
 
 
 #[derive(Clone)]
-pub(crate) struct Leaf<K,V> {
-    prefix: K,
-    value: V
-}
+pub(crate) struct Leaf<K,V>((K,V));
 
 impl<K,V> Leaf<K,V> {
-    pub fn new(k:K, v:V) -> Self { Self { prefix: k, value: v}}
-    pub fn prefix(&self) -> &K { &self.prefix }
-    pub fn get(&self) -> (&K,&V) { (&self.prefix, &self.value) }
-    pub fn get_mut(&mut self) -> (&K,&mut V) { (&self.prefix, &mut self.value) }
+    pub fn new(k:K, v:V) -> Self { Self((k,v))}
+    pub fn prefix(&self) -> &K { &self.0.0 }
+    pub fn get(&self) -> (&K,&V) { (&self.0.0, &self.0.1) }
+    pub fn get_mut(&mut self) -> (&K,&mut V) { (&self.0.0, &mut self.0.1) }
 }
 
 impl<K,V> From<Leaf<K,V>> for (K,V) {
     fn from(leaf: Leaf<K, V>) -> Self {
-        (leaf.prefix, leaf.value)
+        leaf.0
     }
 }
 
@@ -79,6 +76,18 @@ impl<L> IndexMut<LeafIndex> for TrieLeaves<L>
         unsafe { self.0.get_unchecked_mut(i.index())}
     }
 }
+
+impl<K,V> IntoIterator for TrieLeaves<Leaf<K,V>>
+{
+    type Item = (K,V);
+    type IntoIter = iter::Map<vec::IntoIter<Leaf<K,V>>, fn(Leaf<K,V>)->Self::Item>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter().map(Leaf::into)
+    }
+}
+
 
 
 
