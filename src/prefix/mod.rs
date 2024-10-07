@@ -17,6 +17,7 @@ pub use ipv6trunc::*;
 pub use ipv6netaddr::Ipv6NetAddr;
 pub use ipstd::*;
 pub use cover::*;
+pub use shorten::*;
 
 use std::fmt;
 use std::fmt::{Debug, Display};
