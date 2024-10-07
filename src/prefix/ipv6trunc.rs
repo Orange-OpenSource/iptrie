@@ -12,7 +12,7 @@ use super::*;
 /// The resulting prefix is 4 times shorter that the corresponding Ipv6 generic prefix.
 #[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
-pub struct Ipv6Prefix56 { slot: u64 }
+pub struct Ipv6Prefix56 { pub(super) slot: u64 }
 
 impl IpPrefix for Ipv6Prefix56
 {
@@ -43,7 +43,7 @@ impl IpRootPrefix for Ipv6Prefix56
 /// The resulting prefix is twice as short as the corresponding Ipv6 generic prefix.
 #[repr(C)]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash)]
-pub struct Ipv6Prefix120 { slot: u128 }
+pub struct Ipv6Prefix120 { pub(super) slot: u128 }
 
 impl IpPrefix for Ipv6Prefix120
 {

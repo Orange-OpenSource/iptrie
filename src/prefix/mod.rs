@@ -9,6 +9,7 @@ mod cover;
 
 #[cfg(test)] mod tests;
 mod private;
+mod shorten;
 
 use std::error::Error;
 pub use slot::*;
