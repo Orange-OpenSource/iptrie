@@ -2,22 +2,20 @@
 //!
 
 mod slot;
-mod ipv6trunc;
-mod ipv6netaddr;
 mod ipstd;
 mod cover;
 
 #[cfg(test)] mod tests;
 mod private;
 mod shorten;
+mod routing;
 
 use std::error::Error;
 pub use slot::*;
-pub use ipv6trunc::*;
-pub use ipv6netaddr::Ipv6NetAddr;
 pub use ipstd::*;
 pub use cover::*;
 pub use shorten::*;
+pub use routing::Ipv6NetRouting;
 
 use std::fmt;
 use std::fmt::{Debug, Display};

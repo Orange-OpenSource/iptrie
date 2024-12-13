@@ -25,41 +25,12 @@ pub trait IpPrivatePrefix {
 }
 
 
-
-impl IpPrivatePrefix for Ipv6Prefix56
-{
-    #[inline]
-    fn is_private(&self) -> bool {
-        (self.bitslot() >> 57 == 0xfc >> 1 && self.len() >= 7) // fc00::/7
-            || (self.bitslot() >> 16 == 0x64ff9b0001 && self.len() >= 48) // 64:ff9b:1::/48
-    }
-}
-
-impl IpPrivatePrefix for Ipv6Prefix120
-{
-    #[inline]
-    fn is_private(&self) -> bool {
-        (self.bitslot() >> 121 == 0xfc >> 1 && self.len() >= 7) // fc00::/7
-            || (self.bitslot() >> 80 == 0x64ff9b0001 && self.len() >= 48) // 64:ff9b:1::/48
-    }
-}
-
 impl IpPrivatePrefix for Ipv6Prefix
 {
     #[inline]
     fn is_private(&self) -> bool {
         (self.bitslot() >> 121 == 0xfc >> 1 && self.len() >= 7) // fc00::/7
             || (self.bitslot() >> 80 == 0x64ff9b0001 && self.len() >= 48) // 64:ff9b:1::/48
-    }
-}
-
-impl IpPrivatePrefix for Ipv6NetAddr
-{
-    #[inline]
-    fn is_private(&self) -> bool {
-        // this prefix has a fixed length of 64 (don’t need to be checked)
-        (self.bitslot() >> 57 == 0xfc >> 1) // fc00::/7
-        || (self.bitslot() >> 16 == 0x64ff9b0001) // 64:ff9b:1::/48
     }
 }
 
@@ -144,14 +115,14 @@ impl IpPrivatePrefix for Ipv6Addr
     {
         assert!(Ipv6Addr::from_str("64:ff9b:1::42").unwrap().is_private());
         assert!(Ipv6Prefix::from_str("64:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6Prefix120::from_str("64:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6Prefix56::from_str("64:ff9b:1::42/55").unwrap().is_private());
-        assert!(Ipv6NetAddr::from_str("64:ff9b:1:42::/64").unwrap().is_private());
+        assert!(Ipv6Net::from_str("64:ff9b:1:42::/96").unwrap().is_private());
+        assert!(Ipv6NetRouting::from_str("64:ff9b:1::42/55").unwrap().is_private());
+        assert!(Ipv6NetRouting::from_str("64:ff9b:1:42::/64").unwrap().is_private());
 
         assert!(Ipv6Addr::from_str("fcc0:ff9b:1::42").unwrap().is_private());
         assert!(Ipv6Prefix::from_str("fcc0:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6Prefix120::from_str("fcc0:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6Prefix56::from_str("fcc0:ff9b:1::42/55").unwrap().is_private());
-        assert!(Ipv6NetAddr::from_str("fcc0:ff9b:1:42::/64").unwrap().is_private());
+        assert!(Ipv6Net::from_str("fcc0:ff9b:1:42::/96").unwrap().is_private());
+        assert!(Ipv6NetRouting::from_str("fcc0:ff9b:1::42/55").unwrap().is_private());
+        assert!(Ipv6NetRouting::from_str("fcc0:ff9b:1:42::/64").unwrap().is_private());
     }
 }

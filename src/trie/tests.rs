@@ -20,9 +20,8 @@ fn ipv6_tries() {
     };
 
     let t1: RTrieSet<Ipv6Prefix> = samples.iter().map(|i| Ipv6Prefix::from(*i)).collect();
-    let t2: RTrieSet<Ipv6Prefix56> = samples.iter().map(|i| Ipv6Prefix56::try_from(*i).unwrap()).collect();
-    let t3: RTrieSet<Ipv6Prefix120> = samples.iter().map(|i| Ipv6Prefix120::try_from(*i).unwrap()).collect();
-    let t4: RTrieSet<Ipv6Net> = RTrieSet::from_iter(samples);
+    let t2: RTrieSet<Ipv6NetRouting> = samples.iter().map(|i| Ipv6NetRouting::try_from(*i).unwrap()).collect();
+    let t3: RTrieSet<Ipv6Net> = RTrieSet::from_iter(samples);
 
     let addr = Uniform::<u128>::from(((u64::MAX as u128)<<64)..=u128::MAX);
     std::iter::repeat_with(|| Ipv6Addr::from(addr.sample(&mut rng)))
@@ -31,9 +30,7 @@ fn ipv6_tries() {
             let p1 = t1.lookup(&ip);
             let p2 = t2.lookup(&ip);
             let p3 = t3.lookup(&ip);
-            let p4 = t4.lookup(&ip);
             assert!( p1.covers_equally(p2) );
             assert!( p2.covers_equally(p3) );
-            assert!( p3.covers_equally(p4) );
         });
 }

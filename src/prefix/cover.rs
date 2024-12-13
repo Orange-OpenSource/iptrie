@@ -2,7 +2,6 @@ use std::cmp::Ordering;
 use ipnet::{Ipv4Net,Ipv6Net};
 use std::net::{Ipv4Addr,Ipv6Addr};
 use crate::*;
-use crate::prefix::ipv6netaddr::Ipv6NetAddr;
 
 #[doc(hidden)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -102,15 +101,9 @@ ipcover!(Ipv4Net, Ipv4Prefix);
 ipcover!(Ipv4Net, Ipv4Addr);
 
 ipcover!(Ipv6Prefix, Ipv6Net);
-ipcover!(Ipv6Prefix, Ipv6Prefix120);
 ipcover!(Ipv6Prefix, Ipv6Addr);
 
-ipcover!(Ipv6Prefix120, Ipv6Net);
-ipcover!(Ipv6Prefix120, Ipv6Prefix);
-ipcover!(Ipv6Prefix120, Ipv6Addr);
-
 ipcover!(Ipv6Net, Ipv6Prefix);
-ipcover!(Ipv6Net, Ipv6Prefix120);
 ipcover!(Ipv6Net, Ipv6Addr);
 
 
@@ -137,15 +130,9 @@ macro_rules! ipcover_for_ipv6_on_u64 {
     }
 }
 
-ipcover_for_ipv6_on_u64!(Ipv6Prefix56, Ipv6Prefix);
-ipcover_for_ipv6_on_u64!(Ipv6Prefix56, Ipv6Prefix120);
-ipcover_for_ipv6_on_u64!(Ipv6Prefix56, Ipv6Net);
-ipcover_for_ipv6_on_u64!(Ipv6Prefix56, Ipv6Addr);
-
-ipcover_for_ipv6_on_u64!(Ipv6NetAddr, Ipv6Prefix);
-ipcover_for_ipv6_on_u64!(Ipv6NetAddr, Ipv6Prefix120);
-ipcover_for_ipv6_on_u64!(Ipv6NetAddr, Ipv6Net);
-ipcover_for_ipv6_on_u64!(Ipv6NetAddr, Ipv6Addr);
+ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Prefix);
+ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Net);
+ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Addr);
 
 
 macro_rules! ipcover_of_ipv6_on_u64 {
@@ -167,40 +154,10 @@ macro_rules! ipcover_of_ipv6_on_u64 {
     }
 }
 
-ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6Prefix56);
-ipcover_of_ipv6_on_u64!(Ipv6Prefix120, Ipv6Prefix56);
-ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6Prefix56);
-
-ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6NetAddr);
-ipcover_of_ipv6_on_u64!(Ipv6Prefix120, Ipv6NetAddr);
-ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6NetAddr);
+ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6NetRouting);
+ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6NetRouting);
 
 
-// special coverage cases...
-
-impl IpPrefixCovering<Ipv6Prefix56> for Ipv6NetAddr
-{
-    #[inline]
-    fn covering(&self, _: &Ipv6Prefix56) -> IpPrefixCoverage
-    {
-        // Ipv6Prefix56 is always shorter than Ipv6NetAddr (/64)
-        IpPrefixCoverage::NoCover
-    }
-}
-
-impl IpPrefixCovering<Ipv6NetAddr> for Ipv6Prefix56
-{
-    #[inline]
-    fn covering(&self, other: &Ipv6NetAddr) -> IpPrefixCoverage
-    {
-        // Ipv6NetAddr (/64) is always wider than Ipv6Prefix56
-        if self.bitslot() & other.bitmask() == other.bitslot() {
-            IpPrefixCoverage::WiderRange
-        } else {
-            IpPrefixCoverage::NoCover
-        }
-    }
-}
 
 
 // Equality between prefix...
@@ -215,27 +172,11 @@ macro_rules! ipprefix_eq {
     }
 }
 
-ipprefix_eq!(Ipv6Net,Ipv6NetAddr);
-ipprefix_eq!(Ipv6Net,Ipv6Prefix56);
-ipprefix_eq!(Ipv6Net,Ipv6Prefix120);
+ipprefix_eq!(Ipv6Net,Ipv6NetRouting);
 ipprefix_eq!(Ipv6Net,Ipv6Prefix);
 
-ipprefix_eq!(Ipv6NetAddr,Ipv6Net);
-ipprefix_eq!(Ipv6NetAddr,Ipv6Prefix56);
-ipprefix_eq!(Ipv6NetAddr,Ipv6Prefix120);
-ipprefix_eq!(Ipv6NetAddr,Ipv6Prefix);
-
-ipprefix_eq!(Ipv6Prefix56,Ipv6Net);
-ipprefix_eq!(Ipv6Prefix56,Ipv6NetAddr);
-ipprefix_eq!(Ipv6Prefix56,Ipv6Prefix120);
-ipprefix_eq!(Ipv6Prefix56,Ipv6Prefix);
-
-ipprefix_eq!(Ipv6Prefix120,Ipv6Net);
-ipprefix_eq!(Ipv6Prefix120,Ipv6Prefix56);
-ipprefix_eq!(Ipv6Prefix120,Ipv6NetAddr);
-ipprefix_eq!(Ipv6Prefix120,Ipv6Prefix);
+ipprefix_eq!(Ipv6NetRouting,Ipv6Net);
+ipprefix_eq!(Ipv6NetRouting,Ipv6Prefix);
 
 ipprefix_eq!(Ipv6Prefix,Ipv6Net);
-ipprefix_eq!(Ipv6Prefix,Ipv6Prefix56);
-ipprefix_eq!(Ipv6Prefix,Ipv6NetAddr);
-ipprefix_eq!(Ipv6Prefix,Ipv6Prefix120);
+ipprefix_eq!(Ipv6Prefix,Ipv6NetRouting);

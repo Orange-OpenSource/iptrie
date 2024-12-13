@@ -1,5 +1,5 @@
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
-use crate::{BitSlot, IpPrefix, Ipv4Prefix, Ipv6Prefix, Ipv6Prefix120, Ipv6Prefix56};
+use crate::{BitSlot, Ipv4Prefix, Ipv6Prefix};
 
 /// Shortening an Ip prefix
 pub trait IpPrefixShortening {
@@ -33,26 +33,6 @@ impl IpPrefixShortening for Ipv6Prefix
     }
 }
 
-
-impl IpPrefixShortening for Ipv6Prefix56
-{
-    #[inline]
-    fn shorten(&mut self, maxlen: u8) {
-        if maxlen < self.len() {
-            self.slot = (self.slot & u64::bitmask(maxlen)) | u64::from(maxlen);
-        }
-    }
-}
-
-impl IpPrefixShortening for Ipv6Prefix120
-{
-    #[inline]
-    fn shorten(&mut self, maxlen: u8) {
-        if maxlen < self.len() {
-            self.slot = (self.slot & u128::bitmask(maxlen)) | u128::from(maxlen);
-        }
-    }
-}
 
 
 impl IpPrefixShortening for IpNet {
