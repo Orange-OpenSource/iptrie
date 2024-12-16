@@ -20,7 +20,7 @@ fn ipv6_tries() {
     };
 
     let t1: RTrieSet<Ipv6Prefix> = samples.iter().map(|i| Ipv6Prefix::from(*i)).collect();
-    let t2: RTrieSet<Ipv6NetRouting> = samples.iter().map(|i| Ipv6NetRouting::try_from(*i).unwrap()).collect();
+    let t2: RTrieSet<Ipv6NetPrefix> = samples.iter().map(|i| Ipv6NetPrefix::try_from(*i).unwrap()).collect();
     let t3: RTrieSet<Ipv6Net> = RTrieSet::from_iter(samples);
 
     let addr = Uniform::<u128>::from(((u64::MAX as u128)<<64)..=u128::MAX);

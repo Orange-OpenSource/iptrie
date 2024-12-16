@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::net::Ipv6Addr;
 use std::str::FromStr;
-use ipnet::{Ipv6Net, PrefixLenError};
+use ipnet::{IpNet, Ipv6Net, PrefixLenError};
 use crate::{BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefix, IpRootPrefix, Ipv6Prefix};
 
 /// An Ipv6 prefix limited to 64 bits (EXPERIMENTAL)
@@ -16,12 +16,12 @@ use crate::{BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefi
 /// ```
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
-pub struct Ipv6NetRouting {
+pub struct Ipv6NetPrefix {
     slot: u64,
     len: u8
 }
 
-impl Ipv6NetRouting {
+impl Ipv6NetPrefix {
 
     pub const fn new(ip: Ipv6Addr, len: u8) -> Result<Self, PrefixLenError>
     {
@@ -42,7 +42,7 @@ impl Ipv6NetRouting {
 
 }
 
-impl IpPrefix for Ipv6NetRouting {
+impl IpPrefix for Ipv6NetPrefix {
     type Slot = u64;
 
     #[inline]
@@ -68,7 +68,7 @@ impl IpPrefix for Ipv6NetRouting {
     }
 }
 
-impl IpPrivatePrefix for Ipv6NetRouting {
+impl IpPrivatePrefix for Ipv6NetPrefix {
     #[inline]
     fn is_private(&self) -> bool {
         (self.bitslot() >> 57 == 0xfc >> 1 && self.len() >= 7) // fc00::/7
@@ -76,27 +76,27 @@ impl IpPrivatePrefix for Ipv6NetRouting {
     }
 }
 
-impl Debug for Ipv6NetRouting {
+impl Debug for Ipv6NetPrefix {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        <Ipv6NetRouting as Display>::fmt(self, f)
+        <Ipv6NetPrefix as Display>::fmt(self, f)
     }
 }
 
-impl Display for Ipv6NetRouting {
+impl Display for Ipv6NetPrefix {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         <Ipv6Net as Display>::fmt(&(*self).into(), f)
     }
 }
 
-impl IpRootPrefix for Ipv6NetRouting
+impl IpRootPrefix for Ipv6NetPrefix
 {
     fn root() -> Self {
-        Ipv6NetRouting::new_assert(Ipv6Addr::UNSPECIFIED, 0)
+        Ipv6NetPrefix::new_assert(Ipv6Addr::UNSPECIFIED, 0)
     }
 }
 
 
-impl IpPrefixShortening for Ipv6NetRouting
+impl IpPrefixShortening for Ipv6NetPrefix
 {
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
@@ -107,22 +107,29 @@ impl IpPrefixShortening for Ipv6NetRouting
     }
 }
 
-impl From<Ipv6NetRouting> for Ipv6Net
+
+impl From<Ipv6NetPrefix> for IpNet
 {
     #[inline]
-    fn from(value: Ipv6NetRouting) -> Self {
+    fn from(value: Ipv6NetPrefix) -> Self { IpNet::V6(value.into()) }
+}
+
+impl From<Ipv6NetPrefix> for Ipv6Net
+{
+    #[inline]
+    fn from(value: Ipv6NetPrefix) -> Self {
         Ipv6Net::new(value.network(), value.len()).unwrap()
     }
 }
 
-impl From<Ipv6NetRouting> for Ipv6Prefix
+impl From<Ipv6NetPrefix> for Ipv6Prefix
 {
-    #[inline] fn from(value: Ipv6NetRouting) -> Self {
+    #[inline] fn from(value: Ipv6NetPrefix) -> Self {
         Self { addr: value.network().into(), len: value.len() }
     }
 }
 
-impl TryFrom<Ipv6Net> for Ipv6NetRouting
+impl TryFrom<Ipv6Net> for Ipv6NetPrefix
 {
     type Error = IpPrefixError;
     #[inline]
@@ -131,7 +138,7 @@ impl TryFrom<Ipv6Net> for Ipv6NetRouting
     }
 }
 
-impl TryFrom<Ipv6Prefix> for Ipv6NetRouting
+impl TryFrom<Ipv6Prefix> for Ipv6NetPrefix
 {
     type Error = IpPrefixError;
     #[inline]
@@ -140,9 +147,9 @@ impl TryFrom<Ipv6Prefix> for Ipv6NetRouting
     }
 }
 
-impl FromStr for Ipv6NetRouting {
+impl FromStr for Ipv6NetPrefix {
     type Err = IpPrefixError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ipv6NetRouting::try_from(Ipv6Net::from_str(s)?)
+        Ipv6NetPrefix::try_from(Ipv6Net::from_str(s)?)
     }
 }

@@ -130,9 +130,9 @@ macro_rules! ipcover_for_ipv6_on_u64 {
     }
 }
 
-ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Prefix);
-ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Net);
-ipcover_for_ipv6_on_u64!(Ipv6NetRouting, Ipv6Addr);
+ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Prefix);
+ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Net);
+ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Addr);
 
 
 macro_rules! ipcover_of_ipv6_on_u64 {
@@ -154,8 +154,8 @@ macro_rules! ipcover_of_ipv6_on_u64 {
     }
 }
 
-ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6NetRouting);
-ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6NetRouting);
+ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6NetPrefix);
+ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6NetPrefix);
 
 
 
@@ -172,11 +172,11 @@ macro_rules! ipprefix_eq {
     }
 }
 
-ipprefix_eq!(Ipv6Net,Ipv6NetRouting);
+ipprefix_eq!(Ipv6Net,Ipv6NetPrefix);
 ipprefix_eq!(Ipv6Net,Ipv6Prefix);
 
-ipprefix_eq!(Ipv6NetRouting,Ipv6Net);
-ipprefix_eq!(Ipv6NetRouting,Ipv6Prefix);
+ipprefix_eq!(Ipv6NetPrefix,Ipv6Net);
+ipprefix_eq!(Ipv6NetPrefix,Ipv6Prefix);
 
 ipprefix_eq!(Ipv6Prefix,Ipv6Net);
-ipprefix_eq!(Ipv6Prefix,Ipv6NetRouting);
+ipprefix_eq!(Ipv6Prefix,Ipv6NetPrefix);

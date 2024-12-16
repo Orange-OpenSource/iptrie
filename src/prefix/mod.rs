@@ -8,14 +8,14 @@ mod cover;
 #[cfg(test)] mod tests;
 mod private;
 mod shorten;
-mod routing;
+mod network;
 
 use std::error::Error;
 pub use slot::*;
 pub use ipstd::*;
 pub use cover::*;
 pub use shorten::*;
-pub use routing::Ipv6NetRouting;
+pub use network::Ipv6NetPrefix;
 
 use std::fmt;
 use std::fmt::{Debug, Display};

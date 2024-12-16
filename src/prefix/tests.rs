@@ -19,14 +19,14 @@ fn slot_root() {
 
     assert_eq!( u128::from(Ipv6Prefix::root().network()), 0);
     assert_eq!( Ipv6Prefix::root().len(), 0);
-    assert_eq!( u128::from(Ipv6NetRouting::root().network()), 0);
+    assert_eq!(u128::from(Ipv6NetPrefix::root().network()), 0);
     assert_eq!( Ipv6Prefix::root().len(), 0);
 }
 
 #[test]
 fn parse_errors() {
     assert_eq!( "1::/12".parse::<Ipv4Prefix>(), Err(IpPrefixError::AddrParseError));
-    assert_eq!( "1.1.1.1/12".parse::<Ipv6NetRouting>(), Err(IpPrefixError::AddrParseError));
+    assert_eq!("1.1.1.1/12".parse::<Ipv6NetPrefix>(), Err(IpPrefixError::AddrParseError));
 }
 
 
@@ -63,7 +63,7 @@ fn prefix_ipv6_trunc<P>()
 }
 
 #[test] fn prefix_ipv6_128_trunc() { prefix_ipv6_trunc::<Ipv6Prefix>() }
-#[test] fn prefix_ipv6_64_trunc() { prefix_ipv6_trunc::<Ipv6NetRouting>() }
+#[test] fn prefix_ipv6_64_trunc() { prefix_ipv6_trunc::<Ipv6NetPrefix>() }
 
 #[test]
 fn prefix_eq()
@@ -79,12 +79,12 @@ fn prefix_eq()
         let ipnet2 = Ipv6Net::new(addr, len).unwrap();
         assert_eq!( ipnet.network(), ipnet2.network());
         if ipnet.len() <= 64 {
-            let ipnet3 = Ipv6NetRouting::try_from(ipnet).unwrap();
+            let ipnet3 = Ipv6NetPrefix::try_from(ipnet).unwrap();
             assert!( ipnet3.covers_equally(&ipnet) );
             assert!( ipnet.covers_equally(&ipnet3) );
 
         } else {
-            assert_eq!( Ipv6NetRouting::try_from(ipnet), Err(IpPrefixError::PrefixLenError))
+            assert_eq!(Ipv6NetPrefix::try_from(ipnet), Err(IpPrefixError::PrefixLenError))
         }
     })
 }
@@ -104,8 +104,8 @@ fn prefix_cover()
 
         let a1 = Ipv6Prefix::new(addr, l1).unwrap();
         let a2 = Ipv6Prefix::new(addr, l2).unwrap();
-        let b1 = Ipv6NetRouting::new(addr, l1).unwrap();
-        let b2 = Ipv6NetRouting::new(addr, l2).unwrap();
+        let b1 = Ipv6NetPrefix::new(addr, l1).unwrap();
+        let b2 = Ipv6NetPrefix::new(addr, l2).unwrap();
 
         assert_eq!( a1.covers(&a2), l1 <= l2 );
         assert_eq!( a1.covers(&b2), l1 <= l2 );
@@ -127,7 +127,7 @@ fn coverage_std_fns()
     coverage_std_fn_for::<Ipv4Prefix>();
     coverage_std_fn_for::<Ipv6Net>();
     coverage_std_fn_for::<Ipv6Prefix>();
-    coverage_std_fn_for::<Ipv6NetRouting>();
+    coverage_std_fn_for::<Ipv6NetPrefix>();
 
     let _err : IpPrefixError = ::ipnet::PrefixLenError.into();
     let _ : IpPrefixError = "a".parse::<Ipv4Addr>().unwrap_err().into();
