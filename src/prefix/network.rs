@@ -101,7 +101,7 @@ impl IpPrefixShortening for Ipv6NetPrefix
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
         if maxlen < self.len() {
-            self.slot = self.slot & u64::bitmask(maxlen);
+            self.slot &= u64::bitmask(maxlen);
             self.len = maxlen;
         }
     }

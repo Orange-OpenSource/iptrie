@@ -357,6 +357,7 @@ impl CompressedTree {
 
     pub fn with_capacity(n: usize) -> Self
     {
+        assert_eq!( align_of::<NodeIndex>(), align_of::<Compressed>() );
         let mut memzone = Vec::new();
         // todo: (n+1) ou n ?? ou autre chose ? comment est-ce calculé ?
         memzone.resize((n+1) * (2 * size_of::<Compressed>() / size_of::<NodeIndex>()), NodeIndex::root());
@@ -438,7 +439,7 @@ impl<'a> Iterator for BranchingIterator<'a>
 
 
 #[cfg(feature= "graphviz")]
-impl<K: IpPrefix, V> crate::trie::graphviz::DotWriter for LevelCompressedTrie<K,V>
+impl<K: IpPrefix, V> crate::graphviz::DotWriter for LevelCompressedTrie<K,V>
     where K: std::fmt::Display
 {
     fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()>

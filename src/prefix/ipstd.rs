@@ -179,6 +179,10 @@ macro_rules! ipprefix {
             type Addr = $ipaddr;
             #[inline] fn network(&self) -> Self::Addr { *self }
         }
+
+        impl From<$prefix> for ipnet::IpNet {
+            fn from(value: $prefix) -> Self { <$ipnet>::from(value).into() }
+        }
     }
 }
 

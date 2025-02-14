@@ -254,7 +254,7 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
 
 
 #[cfg(feature= "graphviz")]
-impl<K:std::fmt::Display, V> crate::trie::graphviz::DotWriter for RadixTrie<K,V>
+impl<K:std::fmt::Display, V> crate::graphviz::DotWriter for RadixTrie<K,V>
 {
     fn write_dot(&self, dot: &mut dyn io::Write) -> io::Result<()>
     {

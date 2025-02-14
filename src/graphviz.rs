@@ -1,5 +1,5 @@
-#![cfg(feature= "graphviz")]
-
+//! Graphviz representation of tries
+//!
 //! This module is only dedicated to produce graphviz representation
 //! of the tries for debugging purpose.
 //!

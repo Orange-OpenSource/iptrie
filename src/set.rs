@@ -1,9 +1,10 @@
+//! Generic prefix trie set structures
 use std::num::NonZeroUsize;
 use crate::trie::patricia::RadixTrie;
 use crate::trie::lctrie::LevelCompressedTrie;
 use crate::prefix::*;
 
-#[cfg(feature = "graphviz")] pub use crate::trie::graphviz::DotWriter;
+#[cfg(feature = "graphviz")] use crate::graphviz::DotWriter;
 #[cfg(feature = "graphviz")] use std::fmt::Display;
 use crate::trie::common::Leaf;
 
@@ -11,18 +12,8 @@ use crate::trie::common::Leaf;
 #[derive(Clone)]
 pub struct RTrieSet<P: IpPrefix>(pub(crate) RadixTrie<P,()>);
 
-/// Convenient alias for radix trie set of Ipv4 prefixes
-pub type Ipv4RTrieSet = RTrieSet<Ipv4Prefix>;
-/// Convenient alias for radix trie set of Ipv6 prefixes
-pub type Ipv6RTrieSet = RTrieSet<Ipv6Prefix>;
-
 /// A set of Ip prefixes based on a level-compressed trie
 pub struct LCTrieSet<P: IpPrefix>(pub(crate) LevelCompressedTrie<P,()>);
-
-/// Convenient alias for LC-Trie set of Ipv4 prefixes
-pub type Ipv4LCTrieSet = LCTrieSet<Ipv4Prefix>;
-/// Convenient alias for LC-Trie set of Ipv6 prefixes
-pub type Ipv6LCTrieSet = LCTrieSet<Ipv6Prefix>;
 
 impl<P:IpRootPrefix> RTrieSet<P>
 {
@@ -144,12 +135,15 @@ impl<P:IpPrefix> RTrieSet<P>
         self.0.remove(k).is_some()
     }
 
+    /// Replace an existing prefix.
+    ///
     /// Adds a prefix to the set, replacing the existing one, if any (exact match performed).
     /// Returns the replaced value.
     ///
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::set::*;
     /// use std::net::Ipv4Addr;
     /// use ipnet::Ipv4Net;
     /// let mut trie = RTrieSet::new();
@@ -179,11 +173,10 @@ impl<P:IpPrefix> RTrieSet<P>
     ///
     /// To access to the longest prefix match, use [`Self::lookup`].
     ///
-    /// To get a mutable access to a value, use [`Self::get_mut`].
-    ///
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::set::*;
     /// use std::net::Ipv4Addr;
     /// use ipnet::Ipv4Net;
     /// let mut trie = RTrieSet::new();
@@ -315,7 +308,7 @@ impl<P:IpPrefix> LCTrieSet<P>
     pub fn contains<Q>(&self, k: &Q) -> bool
         where
             Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>+PartialEq<Q>
+            P: IpPrefixCovering<Q>
     {
         self.0.get(k).is_some()
     }
@@ -324,27 +317,26 @@ impl<P:IpPrefix> LCTrieSet<P>
     ///
     /// To access to the longest prefix match, use [`Self::lookup`].
     ///
-    /// To get a mutable access to a value, use [`Self::get_mut`].
-    ///
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::set::*;
     /// use std::net::Ipv4Addr;
-    /// let mut trie = RTrieMap::with_root(42);
+    /// let mut trie = RTrieSet::new();
     ///
     /// let addr = Ipv4Addr::new(1,1,1,1);
     /// let ip20 = Ipv4Prefix::new(addr, 20).unwrap();
     /// let ip22 = Ipv4Prefix::new(addr, 22).unwrap();
     /// let ip24 = Ipv4Prefix::new(addr, 24).unwrap();
     ///
-    /// trie.insert(ip24, 24);
-    /// trie.insert(ip20, 20);
+    /// trie.insert(ip24);
+    /// trie.insert(ip20);
     ///
     /// let lctrie = trie.compress();
     ///
-    /// assert_eq!( lctrie.get(&ip24), Some(&24));
-    /// assert_eq!( lctrie.get(&ip22), None);
-    /// assert_eq!( lctrie.get(&ip20), Some(&20));
+    /// assert!( lctrie.get(&ip24).is_some());
+    /// assert!( lctrie.get(&ip22).is_none());
+    /// assert!( lctrie.get(&ip20).is_some());
     /// ```
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&P>

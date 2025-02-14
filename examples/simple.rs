@@ -1,5 +1,6 @@
 use ipnet::Ipv4Net;
-use iptrie::{DotWriter, Ipv4RTrieSet};
+use iptrie::graphviz::DotWriter;
+use iptrie::Ipv4RTrieSet;
 use iptrie::Ipv4Prefix;
 
 fn main() {

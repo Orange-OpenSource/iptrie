@@ -61,7 +61,7 @@ impl IpPrivatePrefix for Ipv4Net
         match self.addr().octets() {
             [10, ..] => self.len() >= 8, // 10.0.0.0/8
             //[100, b, ..] if b >= 64 && b <= 127 => self.len() >= 10, // 100.64.0.0/10 (Shared Address Space)
-            [172, b, ..] if b >= 16 && b <= 31 => self.len() >= 12, // 172.16.0.0/12
+            [172, b, ..] if (16..=31).contains(&b) => self.len() >= 12, // 172.16.0.0/12
             //[192, 0, 0, ..] => self.len() >= 24, // 192.0.0.0/24 (IETF Protocol Assignments)
             [192, 168, ..] => self.len() >= 16, // 192.168.0.0/16
             //[198, 18, ..]|[198, 19, ..] => self.len() >= 15, // 198.18.0.0/15 (Benchmarking)
@@ -77,7 +77,7 @@ impl IpPrivatePrefix for Ipv4Addr
         match self.octets() {
             [10, ..] => true, // 10.0.0.0/8
             //[100, b, ..] if b >= 64 && b <= 127 => true, // 100.64.0.0/10  (Shared Address Space)
-            [172, b, ..] if b >= 16 && b <= 31 => true, // 172.16.0.0/12
+            [172, b, ..] if (16..=31).contains(&b) => true, // 172.16.0.0/12
             //[192, 0, 0, ..] => true, // 192.0.0.0/24 (IETF Protocol Assignments)
             [192, 168, ..] => true, // 192.168.0.0/16
             //[198, 18, ..]|[198, 19, ..] => true, // 198.18.0.0/15 (Benchmarking)

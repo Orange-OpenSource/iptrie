@@ -16,7 +16,7 @@ impl IpPrefixShortening for Ipv4Prefix
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
         if maxlen < self.len {
-            self.addr = u32::from(self.addr) & u32::bitmask(maxlen);
+            self.addr &= u32::bitmask(maxlen);
             self.len = maxlen;
         }
     }
@@ -27,7 +27,7 @@ impl IpPrefixShortening for Ipv6Prefix
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
         if maxlen < self.len {
-            self.addr = u128::from(self.addr) & u128::bitmask(maxlen);
+            self.addr &= u128::bitmask(maxlen);
             self.len = maxlen;
         }
     }

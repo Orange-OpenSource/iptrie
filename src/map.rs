@@ -1,3 +1,4 @@
+//! Generic prefix trie map structures
 use std::num::NonZeroUsize;
 use crate::trie::patricia::RadixTrie;
 use crate::trie::lctrie::LevelCompressedTrie;
@@ -5,7 +6,7 @@ use crate::set::*;
 
 use crate::prefix::*;
 
-#[cfg(feature = "graphviz")] pub use crate::trie::graphviz::DotWriter;
+#[cfg(feature = "graphviz")] use crate::graphviz::DotWriter;
 #[cfg(feature = "graphviz")] use std::fmt::Display;
 use crate::trie::common::Leaf;
 
@@ -13,18 +14,8 @@ use crate::trie::common::Leaf;
 #[derive(Clone)]
 pub struct RTrieMap<K,V>(pub(crate) RadixTrie<K,V>);
 
-/// Convenient alias for radix trie map of Ipv4 prefixes
-pub type Ipv4RTrieMap<V> = RTrieMap<Ipv4Prefix,V>;
-/// Convenient alias for radix trie map of Ipv6 prefixes
-pub type Ipv6RTrieMap<V> = RTrieMap<Ipv6Prefix,V>;
-
 /// A map of Ip prefixes based on a level-compressed trie
 pub struct LCTrieMap<K,V>(pub(crate) LevelCompressedTrie<K,V>);
-
-/// Convenient alias for LC-Trie map of Ipv4 prefixes
-pub type Ipv4LCTrieMap<V> = LCTrieMap<Ipv4Prefix,V>;
-/// Convenient alias for LC-Trie map of Ipv6 prefixes
-pub type Ipv6LCTrieMap<V> = LCTrieMap<Ipv6Prefix,V>;
 
 
 impl<K:IpRootPrefix,V:Default> RTrieMap<K,V>
@@ -99,6 +90,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     ///
     /// let mut trie = RTrieMap::with_root(42);
@@ -124,6 +116,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -157,6 +150,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -187,6 +181,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -221,6 +216,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -252,6 +248,7 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// let mut trie = RTrieMap::with_root(42);
     ///
     /// let ip20 = "1.1.1.1/20".parse::<Ipv4Prefix>().unwrap();
@@ -333,6 +330,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -353,7 +351,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     pub fn get<Q>(&self, k: &Q) -> Option<&V>
         where
             Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>+PartialEq<Q>
+            K: IpPrefixCovering<Q>
     { self.0.get(k).map(|(_,v)| v) }
 
     /// Gets a mutable access to the value associated with an exact match of the key.
@@ -365,6 +363,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::new();
     ///
@@ -385,7 +384,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
         where
             Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>+PartialEq<Q>
+            K: IpPrefixCovering<Q>
     {
         self.0.get_mut(k).map(|(_,v)| v)
     }
@@ -401,6 +400,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// use std::net::Ipv4Addr;
     /// let mut trie = RTrieMap::with_root(42);
     ///
@@ -435,6 +435,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// # Example
     /// ```
     /// # use iptrie::*;
+    /// # use iptrie::map::*;
     /// let mut trie = RTrieMap::with_root(42);
     ///
     /// let ip20 = "1.1.1.1/20".parse::<Ipv4Prefix>().unwrap();
