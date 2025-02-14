@@ -23,7 +23,7 @@ fn main()
         "1.1.0.0/24",
         "1.1.1.0/24",
         "1.1.0.0/20",
-        "1.1.2.0/24"
+        "1.2.2.0/24"
     ];
 
     let iter = prefixes.iter().map(|x| x.parse::<Ipv4Prefix>().unwrap());
