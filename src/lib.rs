@@ -5,7 +5,7 @@ mod prefix;
 #[cfg(feature= "graphviz")] pub mod graphviz;
 
 use std::num::NonZeroUsize;
-use ipnet::IpNet;
+use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use map::*;
 use set::*;
 
@@ -114,6 +114,58 @@ impl IpRTrieSet {
     }
 }
 
+
+impl Extend<Ipv4Net> for IpRTrieSet
+{
+    fn extend<I: IntoIterator<Item=Ipv4Net>>(&mut self, iter: I) {
+        self.ipv4.extend(iter.into_iter().map(|i| i.into()))
+    }
+}
+impl Extend<Ipv6Net> for IpRTrieSet
+{
+    fn extend<I: IntoIterator<Item=Ipv6Net>>(&mut self, iter: I) {
+        self.ipv6.extend(iter.into_iter().map(|i| i.into()))
+    }
+}
+
+impl Extend<IpNet> for IpRTrieSet
+{
+    fn extend<I: IntoIterator<Item=IpNet>>(&mut self, iter: I)
+    {
+        iter.into_iter().for_each(| item | { self.insert(item); } )
+    }
+}
+
+impl FromIterator<IpNet> for IpRTrieSet
+{
+    fn from_iter<I:IntoIterator<Item=IpNet>>(iter: I) -> Self
+    {
+        let mut trieset = Self::default();
+        trieset.extend(iter);
+        trieset
+    }
+}
+
+impl FromIterator<Ipv4Net> for IpRTrieSet
+{
+    fn from_iter<I:IntoIterator<Item=Ipv4Net>>(iter: I) -> Self
+    {
+        let mut trieset = Self::default();
+        trieset.extend(iter);
+        trieset
+    }
+}
+
+impl FromIterator<Ipv6Net> for IpRTrieSet
+{
+    fn from_iter<I:IntoIterator<Item=Ipv6Net>>(iter: I) -> Self
+    {
+        let mut trieset = Self::default();
+        trieset.extend(iter);
+        trieset
+    }
+}
+
 impl IpLCTrieSet {
 
     /// Returns the size of the set.
@@ -159,6 +211,14 @@ impl IpLCTrieSet {
     }
 }
 
+
+impl FromIterator<IpNet> for IpLCTrieSet
+{
+    fn from_iter<I:IntoIterator<Item=IpNet>>(iter: I) -> Self
+    {
+        IpRTrieSet::from_iter(iter).compress()
+    }
+}
 
 /// Convenient alias for radix trie map of Ipv4 prefixes
 pub type Ipv4RTrieMap<V> = RTrieMap<Ipv4Prefix,V>;
@@ -299,6 +359,59 @@ impl<V> IpRTrieMap<V> {
     }
 }
 
+
+impl<V> Extend<(Ipv4Net, V)> for IpRTrieMap<V>
+{
+    fn extend<I: IntoIterator<Item=(Ipv4Net,V)>>(&mut self, iter: I)
+    {
+        self.ipv4.extend(iter.into_iter().map(|(i,v)| (i.into(),v)))
+    }
+}
+impl<V> Extend<(Ipv6Net, V)> for IpRTrieMap<V>
+{
+    fn extend<I: IntoIterator<Item=(Ipv6Net,V)>>(&mut self, iter: I)
+    {
+        self.ipv6.extend(iter.into_iter().map(|(i,v)| (i.into(),v)))
+    }
+}
+impl<V> Extend<(IpNet, V)> for IpRTrieMap<V>
+{
+    fn extend<I: IntoIterator<Item=(IpNet,V)>>(&mut self, iter: I)
+    {
+        iter.into_iter().for_each(|(k,v)| {self.insert(k,v);})
+    }
+}
+
+impl<V:Default> FromIterator<(IpNet, V)> for IpRTrieMap<V>
+{
+    fn from_iter<I: IntoIterator<Item=(IpNet, V)>>(iter: I) -> Self
+    {
+        let mut triemap = Self::default();
+        triemap.extend(iter);
+        triemap
+    }
+}
+
+impl<V:Default> FromIterator<(Ipv4Net, V)> for IpRTrieMap<V>
+{
+    fn from_iter<I: IntoIterator<Item=(Ipv4Net, V)>>(iter: I) -> Self
+    {
+        let mut triemap = Self::default();
+        triemap.extend(iter);
+        triemap
+    }
+}
+
+impl<V:Default> FromIterator<(Ipv6Net, V)> for IpRTrieMap<V>
+{
+    fn from_iter<I: IntoIterator<Item=(Ipv6Net, V)>>(iter: I) -> Self
+    {
+        let mut triemap = Self::default();
+        triemap.extend(iter);
+        triemap
+    }
+}
+
 impl<V> IpLCTrieMap<V> {
 
     /// Returns the size of the map.
@@ -374,3 +487,10 @@ impl<V> IpLCTrieMap<V> {
     }
 }
 
+
+impl<V:Default> FromIterator<(IpNet,V)> for IpLCTrieMap<V>
+{
+    fn from_iter<I:IntoIterator<Item=(IpNet,V)>>(iter: I) -> Self {
+        IpRTrieMap::from_iter(iter).compress()
+    }
+}
