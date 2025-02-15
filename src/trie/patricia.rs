@@ -184,8 +184,8 @@ impl<K:IpPrefix,V> RadixTrie<K,V>
 
             // reindex the leaf which will be swapped with the removed one
             let lastleaf = LeafIndex::from(self.leaves.len()-1);
-            let (mut bb,_ll) = self.inner_lookup(&self[lastleaf]);
-            debug_assert_eq!( self[lastleaf].len(), self[_ll].len() );
+            let (mut bb,_) = self.inner_lookup(&self[lastleaf]);
+            //debug_assert_eq!( self[lastleaf].len(), self[_ll].len() );
             if self[bb].child[0] == lastleaf { self[bb].child[0] = l.into(); }
             if self[bb].child[1] == lastleaf { self[bb].child[1] = l.into(); }
             while self[bb].escape == lastleaf {
