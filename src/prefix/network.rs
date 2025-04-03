@@ -15,7 +15,7 @@ use crate::{BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefi
 ///            ip prefix slot                length
 /// ```
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Hash, Ord, PartialOrd)]
 pub struct Ipv6NetPrefix {
     slot: u64,
     len: u8
