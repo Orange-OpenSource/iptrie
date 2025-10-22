@@ -7,7 +7,8 @@ use test::Bencher;
 
 use ipnet::*;
 use iptrie::*;
-use  ip_network_table_deps_treebitmap::IpLookupTable;
+use iptrie::set::RTrieSet;
+use ip_network_table_deps_treebitmap::IpLookupTable;
 
 fn random_ipv4net() -> impl Iterator<Item=Ipv4Net>
 {

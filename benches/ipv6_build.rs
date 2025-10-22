@@ -6,7 +6,8 @@ use std::net::Ipv6Addr;
 use test::Bencher;
 
 use iptrie::*;
-use  ip_network_table_deps_treebitmap::IpLookupTable;
+use iptrie::set::{RTrieSet, LCTrieSet};
+use ip_network_table_deps_treebitmap::IpLookupTable;
 
 fn random_ipv6_prefix() -> impl Iterator<Item=Ipv6Prefix>
 {
