@@ -5,8 +5,9 @@ use std::iter::repeat_with;
 use std::net::Ipv4Addr;
 use test::Bencher;
 
-use ip_network_table_deps_treebitmap::IpLookupTable;
 use iptrie::*;
+use iptrie::set::{RTrieSet, LCTrieSet};
+use ip_network_table_deps_treebitmap::IpLookupTable;
 
 fn random_ipv4_prefix() -> impl Iterator<Item = Ipv4Prefix> {
     use rand::distributions::*;

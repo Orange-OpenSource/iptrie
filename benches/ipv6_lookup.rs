@@ -5,9 +5,10 @@ use std::iter::repeat_with;
 use std::net::Ipv6Addr;
 use test::Bencher;
 
-use ip_network_table_deps_treebitmap::IpLookupTable;
 use ipnet::*;
 use iptrie::*;
+use iptrie::set::RTrieSet;
+use  ip_network_table_deps_treebitmap::IpLookupTable;
 
 fn random_ipv6net() -> impl Iterator<Item = Ipv6Net> {
     use rand::distributions::*;
@@ -48,22 +49,11 @@ fn lookup_ipv6prefix_trie(bencher: &mut Bencher) {
 }
 
 #[bench]
-fn lookup_ipv6prefix120_trie(bencher: &mut Bencher) {
+fn lookup_ipv6netprefix_trie(bencher: &mut Bencher)
+{
     let trie: RTrieSet<_> = random_ipv6net()
-        .map(Ipv6Prefix120::try_from)
-        .collect::<Result<_, _>>()
-        .unwrap();
-    let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000);
-    bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())));
-    println!("{}", result.len());
-}
-
-#[bench]
-fn lookup_ipv6prefix56_trie(bencher: &mut Bencher) {
-    let trie: RTrieSet<_> = random_ipv6net()
-        .map(Ipv6Prefix56::try_from)
-        .collect::<Result<_, _>>()
+        .map(Ipv6NetPrefix::try_from)
+        .collect::<Result<_,_>>()
         .unwrap();
     let mut sample = random_ipv6addr();
     let mut result = Vec::with_capacity(1_000);
@@ -106,23 +96,11 @@ fn lookup_ipv6prefix_lctrie(bencher: &mut Bencher) {
 }
 
 #[bench]
-fn lookup_ipv6prefix120_lctrie(bencher: &mut Bencher) {
+fn lookup_ipv6netprefix_lctrie(bencher: &mut Bencher)
+{
     let trie: RTrieSet<_> = random_ipv6net()
-        .map(Ipv6Prefix120::try_from)
-        .collect::<Result<_, _>>()
-        .unwrap();
-    let trie = trie.compress();
-    let mut sample = random_ipv6addr();
-    let mut result = Vec::with_capacity(1_000);
-    bencher.iter(|| result.push(trie.lookup(&sample.next().unwrap())));
-    println!("{}", result.len());
-}
-
-#[bench]
-fn lookup_ipv6prefix56_lctrie(bencher: &mut Bencher) {
-    let trie: RTrieSet<_> = random_ipv6net()
-        .map(Ipv6Prefix56::try_from)
-        .collect::<Result<_, _>>()
+        .map(Ipv6NetPrefix::try_from)
+        .collect::<Result<_,_>>()
         .unwrap();
     let trie = trie.compress();
     let mut sample = random_ipv6addr();

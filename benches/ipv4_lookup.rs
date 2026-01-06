@@ -5,9 +5,10 @@ use std::iter::repeat_with;
 use std::net::Ipv4Addr;
 use test::Bencher;
 
-use ip_network_table_deps_treebitmap::IpLookupTable;
 use ipnet::*;
 use iptrie::*;
+use iptrie::set::RTrieSet;
+use ip_network_table_deps_treebitmap::IpLookupTable;
 
 fn random_ipv4net() -> impl Iterator<Item = Ipv4Net> {
     use rand::distributions::*;
