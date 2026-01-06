@@ -17,8 +17,8 @@ use crate::{BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefi
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Default, Hash, Ord, PartialOrd)]
 pub struct Ipv6NetPrefix {
-    slot: u64,
-    len: u8
+    slot: [u8; 8],
+    len: u8,
 }
 
 impl Ipv6NetPrefix {
@@ -28,18 +28,22 @@ impl Ipv6NetPrefix {
         if len > 64 {
             Err(PrefixLenError)
         } else {
-            let bitmask = if len == 0 { 0 } else { (!0) << (64-len) };
-            Ok(Self { slot: ((ip.to_bits() >> 64) as u64) & bitmask, len })
+            let bitmask = if len == 0 { 0 } else { (!0) << (64 - len) };
+            Ok(Self {
+                slot: (((ip.to_bits() >> 64) as u64) & bitmask).to_be_bytes(),
+                len,
+            })
         }
     }
 
-    pub const fn new_assert(ip: Ipv6Addr, len: u8) -> Self
-    {
+    pub const fn new_assert(ip: Ipv6Addr, len: u8) -> Self {
         assert!(len <= 64);
-        let bitmask = if len == 0 { 0 } else { (!0) << (64-len) };
-        Self { slot: ((ip.to_bits() >> 64) as u64) & bitmask, len }
+        let bitmask = if len == 0 { 0 } else { (!0) << (64 - len) };
+        Self {
+            slot: (((ip.to_bits() >> 64) as u64) & bitmask).to_be_bytes(),
+            len,
+        }
     }
-
 }
 
 impl IpPrefix for Ipv6NetPrefix {
@@ -47,12 +51,12 @@ impl IpPrefix for Ipv6NetPrefix {
 
     #[inline]
     fn bitslot(&self) -> Self::Slot {
-        self.slot
+        u64::from_be_bytes(self.slot)
     }
 
     #[inline]
     fn bitslot_trunc(&self) -> Self::Slot {
-        self.slot & u64::bitmask(self.len)
+        self.bitslot() & u64::bitmask(self.len)
     }
 
     #[inline]
@@ -64,7 +68,7 @@ impl IpPrefix for Ipv6NetPrefix {
     type Addr = Ipv6Addr;
 
     fn network(&self) -> Self::Addr {
-        Ipv6Addr::from_bits((self.slot as u128) << 64)
+        Ipv6Addr::from_bits((self.bitslot() as u128) << 64)
     }
 }
 
@@ -101,7 +105,7 @@ impl IpPrefixShortening for Ipv6NetPrefix
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
         if maxlen < self.len() {
-            self.slot &= u64::bitmask(maxlen);
+            self.slot = (self.bitslot() & u64::bitmask(maxlen)).to_be_bytes();
             self.len = maxlen;
         }
     }

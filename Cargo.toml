@@ -1,6 +1,6 @@
 [package]
 name = "iptrie"
-version = "0.10.3"
+version = "0.10.4"
 authors = ["Xophe <christophe.dousson@orange.com>"]
 edition = "2021"
 license = "MIT"
@@ -13,7 +13,7 @@ categories = ["data-structures", "algorithms"]
 ipnet = "2.11.0"
 
 [dev-dependencies]
-libc = "0.2.169"
+libc = "0.2.179"
 rand = "0.8.5"
 ip_network_table-deps-treebitmap = "0.5.0"
 
