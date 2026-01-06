@@ -18,7 +18,7 @@ use super::*;
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Ipv4Prefix {
     pub(super) addr: u32,
-    pub(super) len: u8
+    pub(super) len: u8,
 }
 
 impl Ipv4Prefix {
@@ -41,12 +41,14 @@ impl Ipv4Prefix {
     ///     assert_eq!( Ipv4Prefix::new(ipv4, 64), Err(IpPrefixError::PrefixLenError));
     /// ```
     #[inline]
-    pub fn new(addr: Ipv4Addr, len: u8) -> Result<Self, IpPrefixError>
-    {
+    pub fn new(addr: Ipv4Addr, len: u8) -> Result<Self, IpPrefixError> {
         if len > Self::MAX_LEN {
             Err(IpPrefixError::PrefixLenError)
         } else {
-            Ok( Self { addr: u32::from(addr) & u32::bitmask(len), len })
+            Ok(Self {
+                addr: u32::from(addr) & u32::bitmask(len),
+                len,
+            })
         }
     }
 }
@@ -57,9 +59,8 @@ impl Ipv4Prefix {
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Ipv6Prefix {
     pub(super) addr: u128,
-    pub(super) len: u8
+    pub(super) len: u8,
 }
-
 
 impl Ipv6Prefix {
     /// Build a new prefix.
@@ -81,48 +82,62 @@ impl Ipv6Prefix {
     ///     assert_eq!( Ipv6Prefix::new(ipv6, 133), Err(IpPrefixError::PrefixLenError));
     /// ```
     #[inline]
-    pub fn new(addr: Ipv6Addr, len: u8) -> Result<Self, IpPrefixError>
-    {
+    pub fn new(addr: Ipv6Addr, len: u8) -> Result<Self, IpPrefixError> {
         if len > Self::MAX_LEN {
             Err(IpPrefixError::PrefixLenError)
         } else {
-            Ok( Self { addr: u128::from(addr) & u128::bitmask(len), len })
+            Ok(Self {
+                addr: u128::from(addr) & u128::bitmask(len),
+                len,
+            })
         }
     }
 }
 
-
-
 macro_rules! ipprefix {
-
     ($ipaddr:ty, $ipnet:ty, $prefix:ident, $slot:ty) => {
-
-        impl IpPrefix for $prefix
-        {
+        impl IpPrefix for $prefix {
             type Slot = $slot;
-            #[inline] fn bitslot(&self) -> Self::Slot { self.addr }
-            #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.addr }
-            #[inline] fn len(&self) -> u8 { self.len }
+            #[inline]
+            fn bitslot(&self) -> Self::Slot {
+                self.addr
+            }
+            #[inline]
+            fn bitslot_trunc(&self) -> Self::Slot {
+                self.addr
+            }
+            #[inline]
+            fn len(&self) -> u8 {
+                self.len
+            }
 
             const MAX_LEN: u8 = <Self as IpPrefix>::Slot::LEN;
             type Addr = $ipaddr;
-            #[inline] fn network(&self) -> Self::Addr { self.addr.into() }
-        }
-
-        impl IpRootPrefix for $prefix
-        {
-            #[inline] fn root() -> Self { Self { addr: 0, len: 0 } }
-        }
-
-        impl From<$ipnet> for $prefix
-        {
-            #[inline] fn from(value: $ipnet) -> Self {
-                Self { addr: value.trunc().addr().into(), len: value.prefix_len() }
+            #[inline]
+            fn network(&self) -> Self::Addr {
+                self.addr.into()
             }
         }
-        impl From<$prefix> for $ipnet
-        {
-            #[inline] fn from(value: $prefix) -> Self {
+
+        impl IpRootPrefix for $prefix {
+            #[inline]
+            fn root() -> Self {
+                Self { addr: 0, len: 0 }
+            }
+        }
+
+        impl From<$ipnet> for $prefix {
+            #[inline]
+            fn from(value: $ipnet) -> Self {
+                Self {
+                    addr: value.trunc().addr().into(),
+                    len: value.prefix_len(),
+                }
+            }
+        }
+        impl From<$prefix> for $ipnet {
+            #[inline]
+            fn from(value: $prefix) -> Self {
                 <$ipnet>::new(value.addr.into(), value.len()).unwrap()
             }
         }
@@ -144,48 +159,76 @@ macro_rules! ipprefix {
                 Ok(<$prefix>::from(<$ipnet>::from_str(s)?))
             }
         }
-        impl From<$ipaddr> for $prefix
-        {
-            #[inline] fn from(value: $ipaddr) -> Self {
-                Self { addr: value.into(), len: Self::MAX_LEN }
+        impl From<$ipaddr> for $prefix {
+            #[inline]
+            fn from(value: $ipaddr) -> Self {
+                Self {
+                    addr: value.into(),
+                    len: Self::MAX_LEN,
+                }
             }
         }
 
-        impl IpPrefix for $ipnet
-        {
+        impl IpPrefix for $ipnet {
             type Slot = $slot;
-            #[inline] fn bitslot(&self) -> Self::Slot { <$slot>::from(self.addr()) }
-            #[inline] fn bitslot_trunc(&self) -> Self::Slot { <$slot>::from(self.network()) }
-            #[inline] fn len(&self) -> u8 { self.prefix_len() }
+            #[inline]
+            fn bitslot(&self) -> Self::Slot {
+                <$slot>::from(self.addr())
+            }
+            #[inline]
+            fn bitslot_trunc(&self) -> Self::Slot {
+                <$slot>::from(self.network())
+            }
+            #[inline]
+            fn len(&self) -> u8 {
+                self.prefix_len()
+            }
 
             const MAX_LEN: u8 = <Self as IpPrefix>::Slot::LEN;
             type Addr = $ipaddr;
-            #[inline] fn network(&self) -> Self::Addr { self.network() }
+            #[inline]
+            fn network(&self) -> Self::Addr {
+                self.network()
+            }
         }
 
-        impl IpRootPrefix for $ipnet
-        {
-            #[inline] fn root() -> Self { Self::default() }
+        impl IpRootPrefix for $ipnet {
+            #[inline]
+            fn root() -> Self {
+                Self::default()
+            }
         }
 
-        impl IpPrefix for $ipaddr
-        {
+        impl IpPrefix for $ipaddr {
             type Slot = $slot;
-            #[inline] fn bitslot(&self) -> Self::Slot { Self::Slot::from(*self) }
-            #[inline] fn bitslot_trunc(&self) -> Self::Slot { self.bitslot() }
-            #[inline] fn len(&self) -> u8 { Self::Slot::LEN }
+            #[inline]
+            fn bitslot(&self) -> Self::Slot {
+                Self::Slot::from(*self)
+            }
+            #[inline]
+            fn bitslot_trunc(&self) -> Self::Slot {
+                self.bitslot()
+            }
+            #[inline]
+            fn len(&self) -> u8 {
+                Self::Slot::LEN
+            }
 
             const MAX_LEN: u8 = <Self as IpPrefix>::Slot::LEN;
             type Addr = $ipaddr;
-            #[inline] fn network(&self) -> Self::Addr { *self }
+            #[inline]
+            fn network(&self) -> Self::Addr {
+                *self
+            }
         }
 
         impl From<$prefix> for ipnet::IpNet {
-            fn from(value: $prefix) -> Self { <$ipnet>::from(value).into() }
+            fn from(value: $prefix) -> Self {
+                <$ipnet>::from(value).into()
+            }
         }
-    }
+    };
 }
 
 ipprefix!(Ipv4Addr, Ipv4Net, Ipv4Prefix, u32);
 ipprefix!(Ipv6Addr, Ipv6Net, Ipv6Prefix, u128);
-

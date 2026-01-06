@@ -1,8 +1,10 @@
+use crate::{
+    BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefix, IpRootPrefix, Ipv6Prefix,
+};
+use ipnet::{IpNet, Ipv6Net, PrefixLenError};
 use std::fmt::{Debug, Display, Formatter};
 use std::net::Ipv6Addr;
 use std::str::FromStr;
-use ipnet::{IpNet, Ipv6Net, PrefixLenError};
-use crate::{BitSlot, IpPrefix, IpPrefixError, IpPrefixShortening, IpPrivatePrefix, IpRootPrefix, Ipv6Prefix};
 
 /// An Ipv6 prefix limited to 64 bits (EXPERIMENTAL)
 ///
@@ -22,9 +24,7 @@ pub struct Ipv6NetPrefix {
 }
 
 impl Ipv6NetPrefix {
-
-    pub const fn new(ip: Ipv6Addr, len: u8) -> Result<Self, PrefixLenError>
-    {
+    pub const fn new(ip: Ipv6Addr, len: u8) -> Result<Self, PrefixLenError> {
         if len > 64 {
             Err(PrefixLenError)
         } else {
@@ -92,16 +92,13 @@ impl Display for Ipv6NetPrefix {
     }
 }
 
-impl IpRootPrefix for Ipv6NetPrefix
-{
+impl IpRootPrefix for Ipv6NetPrefix {
     fn root() -> Self {
         Ipv6NetPrefix::new_assert(Ipv6Addr::UNSPECIFIED, 0)
     }
 }
 
-
-impl IpPrefixShortening for Ipv6NetPrefix
-{
+impl IpPrefixShortening for Ipv6NetPrefix {
     #[inline]
     fn shorten(&mut self, maxlen: u8) {
         if maxlen < self.len() {
@@ -111,30 +108,31 @@ impl IpPrefixShortening for Ipv6NetPrefix
     }
 }
 
-
-impl From<Ipv6NetPrefix> for IpNet
-{
+impl From<Ipv6NetPrefix> for IpNet {
     #[inline]
-    fn from(value: Ipv6NetPrefix) -> Self { IpNet::V6(value.into()) }
+    fn from(value: Ipv6NetPrefix) -> Self {
+        IpNet::V6(value.into())
+    }
 }
 
-impl From<Ipv6NetPrefix> for Ipv6Net
-{
+impl From<Ipv6NetPrefix> for Ipv6Net {
     #[inline]
     fn from(value: Ipv6NetPrefix) -> Self {
         Ipv6Net::new(value.network(), value.len()).unwrap()
     }
 }
 
-impl From<Ipv6NetPrefix> for Ipv6Prefix
-{
-    #[inline] fn from(value: Ipv6NetPrefix) -> Self {
-        Self { addr: value.network().into(), len: value.len() }
+impl From<Ipv6NetPrefix> for Ipv6Prefix {
+    #[inline]
+    fn from(value: Ipv6NetPrefix) -> Self {
+        Self {
+            addr: value.network().into(),
+            len: value.len(),
+        }
     }
 }
 
-impl TryFrom<Ipv6Net> for Ipv6NetPrefix
-{
+impl TryFrom<Ipv6Net> for Ipv6NetPrefix {
     type Error = IpPrefixError;
     #[inline]
     fn try_from(value: Ipv6Net) -> Result<Self, Self::Error> {
@@ -142,8 +140,7 @@ impl TryFrom<Ipv6Net> for Ipv6NetPrefix
     }
 }
 
-impl TryFrom<Ipv6Prefix> for Ipv6NetPrefix
-{
+impl TryFrom<Ipv6Prefix> for Ipv6NetPrefix {
     type Error = IpPrefixError;
     #[inline]
     fn try_from(value: Ipv6Prefix) -> Result<Self, Self::Error> {

@@ -1,21 +1,22 @@
 //! IP Prefixes types and utilities
 //!
 
-mod slot;
-mod ipstd;
 mod cover;
+mod ipstd;
+mod slot;
 
-#[cfg(test)] mod tests;
+mod network;
 mod private;
 mod shorten;
-mod network;
+#[cfg(test)]
+mod tests;
 
-use std::error::Error;
-pub use slot::*;
-pub use ipstd::*;
 pub use cover::*;
-pub use shorten::*;
+pub use ipstd::*;
 pub use network::Ipv6NetPrefix;
+pub use shorten::*;
+pub use slot::*;
+use std::error::Error;
 
 use std::fmt;
 use std::fmt::{Debug, Display};
@@ -23,8 +24,8 @@ use std::hash::Hash;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
-use ipnet::{Ipv4Net, Ipv6Net};
 pub use crate::prefix::private::IpPrivatePrefix;
+use ipnet::{Ipv4Net, Ipv6Net};
 
 pub trait IpRootPrefix: IpPrefix {
     /// Root prefix has a length of 0
@@ -33,8 +34,7 @@ pub trait IpRootPrefix: IpPrefix {
 
 /// Ip prefix (as bit prefix)
 #[allow(clippy::len_without_is_empty)]
-pub trait IpPrefix: IpPrivatePrefix+Debug+Clone+Copy
-{
+pub trait IpPrefix: IpPrivatePrefix + Debug + Clone + Copy {
     /// The slot manipulated inside this prefix
     type Slot: BitSlot;
 
@@ -64,13 +64,15 @@ pub trait IpPrefix: IpPrivatePrefix+Debug+Clone+Copy
     ///
     /// The n (prefix length) first bits are set to 1 and the last ones are set to 0.
     #[inline]
-    fn bitmask(&self) -> Self::Slot { <Self::Slot as BitSlot>::bitmask(self.len()) }
+    fn bitmask(&self) -> Self::Slot {
+        <Self::Slot as BitSlot>::bitmask(self.len())
+    }
 
     /// The maximum allowed length for this prefix
     const MAX_LEN: u8;
 
     /// The underlying ip address (usually Ipv4Addr or Ipv6Addr)
-    type Addr: Display+Clone+Copy+Eq+Hash;
+    type Addr: Display + Clone + Copy + Eq + Hash;
 
     /// The address of the network defined by the prefixv
     ///
@@ -78,10 +80,8 @@ pub trait IpPrefix: IpPrivatePrefix+Debug+Clone+Copy
     fn network(&self) -> Self::Addr;
 }
 
-
-
 /// Error generated when building an Ip prefix
-#[derive(Debug,PartialEq,Eq,Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum IpPrefixError {
     /// The specified length of the prefix is not valid.
     ///
@@ -102,16 +102,11 @@ pub enum IpPrefixError {
     AddrParseError,
 }
 
-impl Display for IpPrefixError
-{
+impl Display for IpPrefixError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            IpPrefixError::PrefixLenError => {
-                fmt.write_str("invalid IP prefix length")
-            }
-            IpPrefixError::AddrParseError => {
-                fmt.write_str("invalid IP address syntax")
-            }
+            IpPrefixError::PrefixLenError => fmt.write_str("invalid IP prefix length"),
+            IpPrefixError::AddrParseError => fmt.write_str("invalid IP address syntax"),
         }
     }
 }
@@ -135,4 +130,3 @@ impl From<ipnet::PrefixLenError> for IpPrefixError {
         IpPrefixError::PrefixLenError
     }
 }
-

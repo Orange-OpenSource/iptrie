@@ -1,5 +1,6 @@
 pub(crate) mod common;
-pub(crate) mod patricia;
 pub(crate) mod lctrie;
+pub(crate) mod patricia;
 
-#[cfg(test)] mod tests;
+#[cfg(test)]
+mod tests;

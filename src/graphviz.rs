@@ -3,17 +3,16 @@
 //! This module is only dedicated to produce graphviz representation
 //! of the tries for debugging purpose.
 //!
+use std::fs::File;
 use std::io;
 use std::io::Write;
-use std::process::{Stdio, Command};
-use std::fs::File;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
-const DOTCMD : &str = "dot";
+const DOTCMD: &str = "dot";
 
 /// Display the inner structure of tries (require `dot` and the activation of feature __graphviz__).
 pub trait DotWriter {
-
     /// Writes the trie structure in dot format
     fn write_dot(&self, dot: &mut dyn Write) -> io::Result<()>;
 
@@ -24,15 +23,12 @@ pub trait DotWriter {
     ///
     /// # Panics
     /// Panics if the `dot` command was not found.
-    fn generate_pdf_file(&self, file: Option<&str>) -> io::Result<()>
-    {
+    fn generate_pdf_file(&self, file: Option<&str>) -> io::Result<()> {
         let child = match file {
-            None => {
-                Command::new(DOTCMD)
-                    .arg("-Tpdf")
-                    .stdin(Stdio::piped())
-                    .spawn()
-            }
+            None => Command::new(DOTCMD)
+                .arg("-Tpdf")
+                .stdin(Stdio::piped())
+                .spawn(),
             Some(filename) => {
                 let mut path = PathBuf::from(filename);
                 path.set_extension("pdf");
@@ -40,7 +36,8 @@ pub trait DotWriter {
 
                 Command::new(DOTCMD)
                     .arg("-Tpdf")
-                    .arg("-o").arg(path)
+                    .arg("-o")
+                    .arg(path)
                     .stdin(Stdio::piped())
                     .spawn()
             }
@@ -57,8 +54,7 @@ pub trait DotWriter {
     ///
     /// If a file name is specified, the graphviz file is generated.
     /// If not, the output is redirected to standard output.
-    fn generate_graphviz_file(&self, file: Option<&str>) -> io::Result<()>
-    {
+    fn generate_graphviz_file(&self, file: Option<&str>) -> io::Result<()> {
         match file {
             None => {
                 let mut dot = io::stdout();
@@ -76,8 +72,7 @@ pub trait DotWriter {
 
     #[doc(hidden)]
     #[cfg(target_os = "macos")]
-    fn open_dot_view(&self) -> io::Result<()>
-    {
+    fn open_dot_view(&self) -> io::Result<()> {
         use std::os::unix::io::AsRawFd;
         use std::os::unix::io::FromRawFd;
 
@@ -94,7 +89,8 @@ pub trait DotWriter {
         unsafe {
             Command::new("open")
                 .arg("-f")
-                .arg("-a").arg("Preview")
+                .arg("-a")
+                .arg("Preview")
                 .stdin(Stdio::from_raw_fd(dot.stdout.unwrap().as_raw_fd()))
                 .spawn()?;
         }

@@ -1,6 +1,6 @@
-use std::net::{Ipv4Addr, Ipv6Addr};
-use ipnet::{Ipv4Net, Ipv6Net};
 use crate::*;
+use ipnet::{Ipv4Net, Ipv6Net};
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 /// Checks if the range of IP addresses are all for private use.
 ///
@@ -24,9 +24,7 @@ pub trait IpPrivatePrefix {
     fn is_private(&self) -> bool;
 }
 
-
-impl IpPrivatePrefix for Ipv6Prefix
-{
+impl IpPrivatePrefix for Ipv6Prefix {
     #[inline]
     fn is_private(&self) -> bool {
         (self.bitslot() >> 121 == 0xfc >> 1 && self.len() >= 7) // fc00::/7
@@ -34,28 +32,25 @@ impl IpPrivatePrefix for Ipv6Prefix
     }
 }
 
-impl IpPrivatePrefix for Ipv4Prefix
-{
+impl IpPrivatePrefix for Ipv4Prefix {
     #[inline]
     fn is_private(&self) -> bool {
         Ipv4Net::from(*self).is_private()
     }
 }
 
-impl IpPrivatePrefix for Ipv6Net
-{
+impl IpPrivatePrefix for Ipv6Net {
     #[inline]
     fn is_private(&self) -> bool {
         match self.addr().octets() {
             [0xfc, ..] | [0xfd, ..] => self.len() >= 7, // fc00::/7
-            [0,0x64,0xff,0x9b,0,1,..] => self.len() >= 48, // 64:ff9b:1::/48
+            [0, 0x64, 0xff, 0x9b, 0, 1, ..] => self.len() >= 48, // 64:ff9b:1::/48
             _ => false,
         }
     }
 }
 
-impl IpPrivatePrefix for Ipv4Net
-{
+impl IpPrivatePrefix for Ipv4Net {
     #[inline]
     fn is_private(&self) -> bool {
         match self.addr().octets() {
@@ -70,8 +65,7 @@ impl IpPrivatePrefix for Ipv4Net
     }
 }
 
-impl IpPrivatePrefix for Ipv4Addr
-{
+impl IpPrivatePrefix for Ipv4Addr {
     #[inline]
     fn is_private(&self) -> bool {
         match self.octets() {
@@ -85,23 +79,23 @@ impl IpPrivatePrefix for Ipv4Addr
         }
     }
 }
-impl IpPrivatePrefix for Ipv6Addr
-{
+impl IpPrivatePrefix for Ipv6Addr {
     #[inline]
     fn is_private(&self) -> bool {
         match self.octets() {
-            [0xfc, ..] | [0xfd, ..] => true, // fc00::/7
-            [0,0x64,0xff,0x9b,0,1,..] => true, // 64:ff9b:1::/48
+            [0xfc, ..] | [0xfd, ..] => true,         // fc00::/7
+            [0, 0x64, 0xff, 0x9b, 0, 1, ..] => true, // 64:ff9b:1::/48
             _ => false,
         }
     }
 }
 
-#[cfg(test)] mod tests {
-    use std::str::FromStr;
-    use std::net::*;
-    use ipnet::*;
+#[cfg(test)]
+mod tests {
     use crate::*;
+    use ipnet::*;
+    use std::net::*;
+    use std::str::FromStr;
 
     #[test]
     fn private_ipv4() {
@@ -111,18 +105,31 @@ impl IpPrivatePrefix for Ipv6Addr
     }
 
     #[test]
-    fn private_ipv6()
-    {
+    fn private_ipv6() {
         assert!(Ipv6Addr::from_str("64:ff9b:1::42").unwrap().is_private());
-        assert!(Ipv6Prefix::from_str("64:ff9b:1:42::/96").unwrap().is_private());
+        assert!(Ipv6Prefix::from_str("64:ff9b:1:42::/96")
+            .unwrap()
+            .is_private());
         assert!(Ipv6Net::from_str("64:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6NetPrefix::from_str("64:ff9b:1::42/55").unwrap().is_private());
-        assert!(Ipv6NetPrefix::from_str("64:ff9b:1:42::/64").unwrap().is_private());
+        assert!(Ipv6NetPrefix::from_str("64:ff9b:1::42/55")
+            .unwrap()
+            .is_private());
+        assert!(Ipv6NetPrefix::from_str("64:ff9b:1:42::/64")
+            .unwrap()
+            .is_private());
 
         assert!(Ipv6Addr::from_str("fcc0:ff9b:1::42").unwrap().is_private());
-        assert!(Ipv6Prefix::from_str("fcc0:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6Net::from_str("fcc0:ff9b:1:42::/96").unwrap().is_private());
-        assert!(Ipv6NetPrefix::from_str("fcc0:ff9b:1::42/55").unwrap().is_private());
-        assert!(Ipv6NetPrefix::from_str("fcc0:ff9b:1:42::/64").unwrap().is_private());
+        assert!(Ipv6Prefix::from_str("fcc0:ff9b:1:42::/96")
+            .unwrap()
+            .is_private());
+        assert!(Ipv6Net::from_str("fcc0:ff9b:1:42::/96")
+            .unwrap()
+            .is_private());
+        assert!(Ipv6NetPrefix::from_str("fcc0:ff9b:1::42/55")
+            .unwrap()
+            .is_private());
+        assert!(Ipv6NetPrefix::from_str("fcc0:ff9b:1:42::/64")
+            .unwrap()
+            .is_private());
     }
 }

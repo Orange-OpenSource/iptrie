@@ -1,7 +1,6 @@
-
-use std::ops::{Shr, Shl, BitAnd, Not, BitOr, BitXor};
 use std::fmt::{Binary, Debug};
 use std::hash::Hash;
+use std::ops::{BitAnd, BitOr, BitXor, Not, Shl, Shr};
 
 /// A fixed-length slot of bits.
 ///
@@ -13,10 +12,21 @@ use std::hash::Hash;
 /// Moreover, `u64` could be used to save memory
 /// for truncated Ipv6 prefixes.
 #[doc(hidden)]
-pub trait BitSlot :
-  Clone + Copy + Default + Debug + Binary + Eq + PartialEq + Hash
-+ Not<Output=Self> + BitAnd<Output=Self> + BitOr<Output=Self> + BitXor<Output=Self>
-+ Shl<u8,Output=Self> + Shr<u8,Output=Self>
+pub trait BitSlot:
+    Clone
+    + Copy
+    + Default
+    + Debug
+    + Binary
+    + Eq
+    + PartialEq
+    + Hash
+    + Not<Output = Self>
+    + BitAnd<Output = Self>
+    + BitOr<Output = Self>
+    + BitXor<Output = Self>
+    + Shl<u8, Output = Self>
+    + Shr<u8, Output = Self>
 {
     /// The length of the slot (number of bits)
     /// # Example
@@ -83,7 +93,6 @@ pub trait BitSlot :
     fn last_16_bits(&self) -> u16;
 }
 
-
 macro_rules! bitslot {
     ($slot:ty) => {
         impl BitSlot for $slot {
@@ -113,4 +122,3 @@ macro_rules! bitslot {
 bitslot!(u32);
 bitslot!(u64);
 bitslot!(u128);
-

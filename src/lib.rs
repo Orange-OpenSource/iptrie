@@ -1,13 +1,14 @@
-mod trie;
+#[cfg(feature = "graphviz")]
+pub mod graphviz;
 pub mod map;
-pub mod set;
 mod prefix;
-#[cfg(feature= "graphviz")] pub mod graphviz;
+pub mod set;
+mod trie;
 
-use std::num::NonZeroUsize;
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use map::*;
 use set::*;
+use std::num::NonZeroUsize;
 
 pub use prefix::*;
 
@@ -21,9 +22,8 @@ pub type Ipv4LCTrieSet = LCTrieSet<Ipv4Prefix>;
 /// Convenient alias for LC-Trie set of Ipv6 prefixes
 pub type Ipv6LCTrieSet = LCTrieSet<Ipv6Prefix>;
 
-
 /// A radix trie set that mix both Ipv4 and Ipv6 prefixes
-#[derive(Clone,Default)]
+#[derive(Clone, Default)]
 pub struct IpRTrieSet {
     pub ipv4: Ipv4RTrieSet,
     pub ipv6: Ipv6RTrieSet,
@@ -36,16 +36,30 @@ pub struct IpLCTrieSet {
 }
 
 impl IpRTrieSet {
-
-    pub fn new() -> Self { Self { ipv4: Ipv4RTrieSet::new(), ipv6: Ipv6RTrieSet::new() } }
-    pub fn compress(self) -> IpLCTrieSet { IpLCTrieSet { ipv4: self.ipv4.compress(), ipv6: self.ipv6.compress() } }
-    pub fn shrink_to_fit(&mut self) { self.ipv4.shrink_to_fit(); self.ipv6.shrink_to_fit(); }
+    pub fn new() -> Self {
+        Self {
+            ipv4: Ipv4RTrieSet::new(),
+            ipv6: Ipv6RTrieSet::new(),
+        }
+    }
+    pub fn compress(self) -> IpLCTrieSet {
+        IpLCTrieSet {
+            ipv4: self.ipv4.compress(),
+            ipv6: self.ipv6.compress(),
+        }
+    }
+    pub fn shrink_to_fit(&mut self) {
+        self.ipv4.shrink_to_fit();
+        self.ipv6.shrink_to_fit();
+    }
 
     /// Returns the size of the set.
     ///
     /// Notice that it always greater or equals two since two top prefixes are
     /// always present in the map (one for Ipv4 and the other for Ipv6)
-    pub fn len(&self) -> NonZeroUsize { self.ipv4.len().saturating_add(self.ipv6.len().get()) }
+    pub fn len(&self) -> NonZeroUsize {
+        self.ipv4.len().saturating_add(self.ipv6.len().get())
+    }
 
     /// Checks if an element is present (exact match).
     pub fn contains(&self, ipnet: &IpNet) -> bool {
@@ -107,59 +121,51 @@ impl IpRTrieSet {
     }
 
     /// Iterates over all the prefixes of this set.
-    pub fn iter(&self) -> impl Iterator<Item=IpNet> + '_
-    {
-        self.ipv4.iter().map(|i| (*i).into())
+    pub fn iter(&self) -> impl Iterator<Item = IpNet> + '_ {
+        self.ipv4
+            .iter()
+            .map(|i| (*i).into())
             .chain(self.ipv6.iter().map(|i| (*i).into()))
     }
 }
 
-
-impl Extend<Ipv4Net> for IpRTrieSet
-{
-    fn extend<I: IntoIterator<Item=Ipv4Net>>(&mut self, iter: I) {
+impl Extend<Ipv4Net> for IpRTrieSet {
+    fn extend<I: IntoIterator<Item = Ipv4Net>>(&mut self, iter: I) {
         self.ipv4.extend(iter.into_iter().map(|i| i.into()))
     }
 }
-impl Extend<Ipv6Net> for IpRTrieSet
-{
-    fn extend<I: IntoIterator<Item=Ipv6Net>>(&mut self, iter: I) {
+impl Extend<Ipv6Net> for IpRTrieSet {
+    fn extend<I: IntoIterator<Item = Ipv6Net>>(&mut self, iter: I) {
         self.ipv6.extend(iter.into_iter().map(|i| i.into()))
     }
 }
 
-impl Extend<IpNet> for IpRTrieSet
-{
-    fn extend<I: IntoIterator<Item=IpNet>>(&mut self, iter: I)
-    {
-        iter.into_iter().for_each(| item | { self.insert(item); } )
+impl Extend<IpNet> for IpRTrieSet {
+    fn extend<I: IntoIterator<Item = IpNet>>(&mut self, iter: I) {
+        iter.into_iter().for_each(|item| {
+            self.insert(item);
+        })
     }
 }
 
-impl FromIterator<IpNet> for IpRTrieSet
-{
-    fn from_iter<I:IntoIterator<Item=IpNet>>(iter: I) -> Self
-    {
+impl FromIterator<IpNet> for IpRTrieSet {
+    fn from_iter<I: IntoIterator<Item = IpNet>>(iter: I) -> Self {
         let mut trieset = Self::default();
         trieset.extend(iter);
         trieset
     }
 }
 
-impl FromIterator<Ipv4Net> for IpRTrieSet
-{
-    fn from_iter<I:IntoIterator<Item=Ipv4Net>>(iter: I) -> Self
-    {
+impl FromIterator<Ipv4Net> for IpRTrieSet {
+    fn from_iter<I: IntoIterator<Item = Ipv4Net>>(iter: I) -> Self {
         let mut trieset = Self::default();
         trieset.extend(iter);
         trieset
     }
 }
 
-impl FromIterator<Ipv6Net> for IpRTrieSet
-{
-    fn from_iter<I:IntoIterator<Item=Ipv6Net>>(iter: I) -> Self
-    {
+impl FromIterator<Ipv6Net> for IpRTrieSet {
+    fn from_iter<I: IntoIterator<Item = Ipv6Net>>(iter: I) -> Self {
         let mut trieset = Self::default();
         trieset.extend(iter);
         trieset
@@ -167,12 +173,13 @@ impl FromIterator<Ipv6Net> for IpRTrieSet
 }
 
 impl IpLCTrieSet {
-
     /// Returns the size of the set.
     ///
     /// Notice that it always greater or equals two since two top prefixes are
     /// always present in the map (one for Ipv4 and the other for Ipv6)
-    pub fn len(&self) -> NonZeroUsize { self.ipv4.len().saturating_add(self.ipv6.len().get()) }
+    pub fn len(&self) -> NonZeroUsize {
+        self.ipv4.len().saturating_add(self.ipv6.len().get())
+    }
 
     /// Checks if an element is present (exact match).
     pub fn contains(&self, ipnet: &IpNet) -> bool {
@@ -204,36 +211,32 @@ impl IpLCTrieSet {
     }
 
     /// Iterates over all the prefixes of this set.
-    pub fn iter(&self) -> impl Iterator<Item=IpNet> + '_
-    {
-        self.ipv4.iter().map(|i| (*i).into())
+    pub fn iter(&self) -> impl Iterator<Item = IpNet> + '_ {
+        self.ipv4
+            .iter()
+            .map(|i| (*i).into())
             .chain(self.ipv6.iter().map(|i| (*i).into()))
     }
 }
 
-
-impl FromIterator<IpNet> for IpLCTrieSet
-{
-    fn from_iter<I:IntoIterator<Item=IpNet>>(iter: I) -> Self
-    {
+impl FromIterator<IpNet> for IpLCTrieSet {
+    fn from_iter<I: IntoIterator<Item = IpNet>>(iter: I) -> Self {
         IpRTrieSet::from_iter(iter).compress()
     }
 }
 
 /// Convenient alias for radix trie map of Ipv4 prefixes
-pub type Ipv4RTrieMap<V> = RTrieMap<Ipv4Prefix,V>;
+pub type Ipv4RTrieMap<V> = RTrieMap<Ipv4Prefix, V>;
 /// Convenient alias for radix trie map of Ipv6 prefixes
-pub type Ipv6RTrieMap<V> = RTrieMap<Ipv6Prefix,V>;
+pub type Ipv6RTrieMap<V> = RTrieMap<Ipv6Prefix, V>;
 
 /// Convenient alias for LC-Trie map of Ipv4 prefixes
-pub type Ipv4LCTrieMap<V> = LCTrieMap<Ipv4Prefix,V>;
+pub type Ipv4LCTrieMap<V> = LCTrieMap<Ipv4Prefix, V>;
 /// Convenient alias for LC-Trie map of Ipv6 prefixes
-pub type Ipv6LCTrieMap<V> = LCTrieMap<Ipv6Prefix,V>;
-
-
+pub type Ipv6LCTrieMap<V> = LCTrieMap<Ipv6Prefix, V>;
 
 /// A radix trie map that mix both Ipv4 and Ipv6 prefixes
-#[derive(Clone,Default)]
+#[derive(Clone, Default)]
 pub struct IpRTrieMap<V> {
     pub ipv4: Ipv4RTrieMap<V>,
     pub ipv6: Ipv6RTrieMap<V>,
@@ -245,34 +248,49 @@ pub struct IpLCTrieMap<V> {
     pub ipv6: Ipv6LCTrieMap<V>,
 }
 
-impl<V:Default> IpRTrieMap<V> {
+impl<V: Default> IpRTrieMap<V> {
     pub fn new() -> Self {
-        Self { ipv4: Ipv4RTrieMap::new(), ipv6: Ipv6RTrieMap::new() }
+        Self {
+            ipv4: Ipv4RTrieMap::new(),
+            ipv6: Ipv6RTrieMap::new(),
+        }
     }
 }
 
 impl<V> IpRTrieMap<V> {
     pub fn with_roots(ipv4: V, ipv6: V) -> Self {
-        Self { ipv4: RTrieMap::with_root(ipv4), ipv6: RTrieMap::with_root(ipv6) }
+        Self {
+            ipv4: RTrieMap::with_root(ipv4),
+            ipv6: RTrieMap::with_root(ipv6),
+        }
     }
 }
 
 impl<V> IpRTrieMap<V> {
-
     /// Returns the size of the map.
     ///
     /// Notice that it always greater or equals two since two top prefixes are
     /// always present in the map (one for Ipv4 and the other for Ipv6)
-    pub fn len(&self) -> NonZeroUsize { self.ipv4.len().saturating_add(self.ipv6.len().get()) }
+    pub fn len(&self) -> NonZeroUsize {
+        self.ipv4.len().saturating_add(self.ipv6.len().get())
+    }
 
     /// Compress this Patricia trie in a LC-Trie.
     ///
     /// For lookup algorithms, a Patricia trie performs unit bit checking and LC-Trie
     /// performs multi bits checking. So the last one is more performant but it
     /// cannot be modified (no insertion or removal operations are provided).
-    pub fn compress(self) -> IpLCTrieMap<V> { IpLCTrieMap { ipv4: self.ipv4.compress(), ipv6: self.ipv6.compress() } }
+    pub fn compress(self) -> IpLCTrieMap<V> {
+        IpLCTrieMap {
+            ipv4: self.ipv4.compress(),
+            ipv6: self.ipv6.compress(),
+        }
+    }
 
-    pub fn shrink_to_fit(&mut self) { self.ipv4.shrink_to_fit(); self.ipv6.shrink_to_fit(); }
+    pub fn shrink_to_fit(&mut self) {
+        self.ipv4.shrink_to_fit();
+        self.ipv6.shrink_to_fit();
+    }
 
     /// Gets the value associated with an exact match of the key.
     ///
@@ -304,19 +322,31 @@ impl<V> IpRTrieMap<V> {
     /// To access to the exact prefix match, use [`Self::get`].
     ///
     /// To get a mutable access to a value, use [`Self::lookup_mut`].
-    pub fn lookup(&self, ipnet: &IpNet) -> (IpNet,&V) {
+    pub fn lookup(&self, ipnet: &IpNet) -> (IpNet, &V) {
         match ipnet {
-            IpNet::V4(net) => { let (&k,v) = self.ipv4.lookup(net);  (k.into(),v) },
-            IpNet::V6(net) => { let (&k,v) = self.ipv6.lookup(net);  (k.into(),v) },
+            IpNet::V4(net) => {
+                let (&k, v) = self.ipv4.lookup(net);
+                (k.into(), v)
+            }
+            IpNet::V6(net) => {
+                let (&k, v) = self.ipv6.lookup(net);
+                (k.into(), v)
+            }
         }
     }
     /// Gets a mutable access to the value associated with a longest prefix match of the key.
     ///
     /// To access to the exact prefix match, use [`Self::get_mut`].
-    pub fn lookup_mut(&mut self, ipnet: &IpNet) -> (IpNet,&mut V) {
+    pub fn lookup_mut(&mut self, ipnet: &IpNet) -> (IpNet, &mut V) {
         match ipnet {
-            IpNet::V4(net) => { let (&k,v) = self.ipv4.lookup_mut(net);  (k.into(),v) },
-            IpNet::V6(net) => { let (&k,v) = self.ipv6.lookup_mut(net);  (k.into(),v) },
+            IpNet::V4(net) => {
+                let (&k, v) = self.ipv4.lookup_mut(net);
+                (k.into(), v)
+            }
+            IpNet::V6(net) => {
+                let (&k, v) = self.ipv6.lookup_mut(net);
+                (k.into(), v)
+            }
         }
     }
     /// Inserts a new entry in the map.
@@ -341,71 +371,67 @@ impl<V> IpRTrieMap<V> {
     /// Iterates over all the entries.
     ///
     /// For a mutable access of values, use [`Self::iter_mut`]
-    pub fn iter(&self) -> impl Iterator<Item=(IpNet,&V)> + '_
-    {
-        self.ipv4.iter().map(|(k,v)| ((*k).into(), v))
-            .chain(self.ipv6.iter().map(|(k,v)| ((*k).into(), v)))
+    pub fn iter(&self) -> impl Iterator<Item = (IpNet, &V)> + '_ {
+        self.ipv4
+            .iter()
+            .map(|(k, v)| ((*k).into(), v))
+            .chain(self.ipv6.iter().map(|(k, v)| ((*k).into(), v)))
     }
     /// Iterates over all the entries with a mutable access to values.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=(IpNet,&mut V)> + '_
-    {
-        self.ipv4.iter_mut().map(|(k,v)| ((*k).into(), v))
-            .chain(self.ipv6.iter_mut().map(|(k,v)| ((*k).into(), v)))
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (IpNet, &mut V)> + '_ {
+        self.ipv4
+            .iter_mut()
+            .map(|(k, v)| ((*k).into(), v))
+            .chain(self.ipv6.iter_mut().map(|(k, v)| ((*k).into(), v)))
     }
 
     /// Gets a set of copy of all the keys in a trie set.
     pub fn prefixes(&self) -> IpRTrieSet {
-        IpRTrieSet { ipv4: self.ipv4.prefixes(), ipv6: self.ipv6.prefixes() }
+        IpRTrieSet {
+            ipv4: self.ipv4.prefixes(),
+            ipv6: self.ipv6.prefixes(),
+        }
     }
 }
 
-
-impl<V> Extend<(Ipv4Net, V)> for IpRTrieMap<V>
-{
-    fn extend<I: IntoIterator<Item=(Ipv4Net,V)>>(&mut self, iter: I)
-    {
-        self.ipv4.extend(iter.into_iter().map(|(i,v)| (i.into(),v)))
+impl<V> Extend<(Ipv4Net, V)> for IpRTrieMap<V> {
+    fn extend<I: IntoIterator<Item = (Ipv4Net, V)>>(&mut self, iter: I) {
+        self.ipv4
+            .extend(iter.into_iter().map(|(i, v)| (i.into(), v)))
     }
 }
-impl<V> Extend<(Ipv6Net, V)> for IpRTrieMap<V>
-{
-    fn extend<I: IntoIterator<Item=(Ipv6Net,V)>>(&mut self, iter: I)
-    {
-        self.ipv6.extend(iter.into_iter().map(|(i,v)| (i.into(),v)))
+impl<V> Extend<(Ipv6Net, V)> for IpRTrieMap<V> {
+    fn extend<I: IntoIterator<Item = (Ipv6Net, V)>>(&mut self, iter: I) {
+        self.ipv6
+            .extend(iter.into_iter().map(|(i, v)| (i.into(), v)))
     }
 }
-impl<V> Extend<(IpNet, V)> for IpRTrieMap<V>
-{
-    fn extend<I: IntoIterator<Item=(IpNet,V)>>(&mut self, iter: I)
-    {
-        iter.into_iter().for_each(|(k,v)| {self.insert(k,v);})
+impl<V> Extend<(IpNet, V)> for IpRTrieMap<V> {
+    fn extend<I: IntoIterator<Item = (IpNet, V)>>(&mut self, iter: I) {
+        iter.into_iter().for_each(|(k, v)| {
+            self.insert(k, v);
+        })
     }
 }
 
-impl<V:Default> FromIterator<(IpNet, V)> for IpRTrieMap<V>
-{
-    fn from_iter<I: IntoIterator<Item=(IpNet, V)>>(iter: I) -> Self
-    {
+impl<V: Default> FromIterator<(IpNet, V)> for IpRTrieMap<V> {
+    fn from_iter<I: IntoIterator<Item = (IpNet, V)>>(iter: I) -> Self {
         let mut triemap = Self::default();
         triemap.extend(iter);
         triemap
     }
 }
 
-impl<V:Default> FromIterator<(Ipv4Net, V)> for IpRTrieMap<V>
-{
-    fn from_iter<I: IntoIterator<Item=(Ipv4Net, V)>>(iter: I) -> Self
-    {
+impl<V: Default> FromIterator<(Ipv4Net, V)> for IpRTrieMap<V> {
+    fn from_iter<I: IntoIterator<Item = (Ipv4Net, V)>>(iter: I) -> Self {
         let mut triemap = Self::default();
         triemap.extend(iter);
         triemap
     }
 }
 
-impl<V:Default> FromIterator<(Ipv6Net, V)> for IpRTrieMap<V>
-{
-    fn from_iter<I: IntoIterator<Item=(Ipv6Net, V)>>(iter: I) -> Self
-    {
+impl<V: Default> FromIterator<(Ipv6Net, V)> for IpRTrieMap<V> {
+    fn from_iter<I: IntoIterator<Item = (Ipv6Net, V)>>(iter: I) -> Self {
         let mut triemap = Self::default();
         triemap.extend(iter);
         triemap
@@ -413,12 +439,13 @@ impl<V:Default> FromIterator<(Ipv6Net, V)> for IpRTrieMap<V>
 }
 
 impl<V> IpLCTrieMap<V> {
-
     /// Returns the size of the map.
     ///
     /// Notice that it always greater or equals two since two top prefixes are
     /// always present in the map (one for Ipv4 and the other for Ipv6)
-    pub fn len(&self) -> NonZeroUsize { self.ipv4.len().saturating_add(self.ipv6.len().get()) }
+    pub fn len(&self) -> NonZeroUsize {
+        self.ipv4.len().saturating_add(self.ipv6.len().get())
+    }
 
     /// Gets the value associated with an exact match of the key.
     ///
@@ -450,47 +477,62 @@ impl<V> IpLCTrieMap<V> {
     /// To access to the exact prefix match, use [`Self::get`].
     ///
     /// To get a mutable access to a value, use [`Self::lookup_mut`].
-    pub fn lookup(&self, ipnet: &IpNet) -> (IpNet,&V) {
+    pub fn lookup(&self, ipnet: &IpNet) -> (IpNet, &V) {
         match ipnet {
-            IpNet::V4(net) => { let (&k,v) = self.ipv4.lookup(net);  (k.into(),v) },
-            IpNet::V6(net) => { let (&k,v) = self.ipv6.lookup(net);  (k.into(),v) },
+            IpNet::V4(net) => {
+                let (&k, v) = self.ipv4.lookup(net);
+                (k.into(), v)
+            }
+            IpNet::V6(net) => {
+                let (&k, v) = self.ipv6.lookup(net);
+                (k.into(), v)
+            }
         }
     }
     /// Gets a mutable access to the value associated with a longest prefix match of the key.
     ///
     /// To access to the exact prefix match, use [`Self::get_mut`].
-    pub fn lookup_mut(&mut self, ipnet: &IpNet) -> (IpNet,&mut V) {
+    pub fn lookup_mut(&mut self, ipnet: &IpNet) -> (IpNet, &mut V) {
         match ipnet {
-            IpNet::V4(net) => { let (&k,v) = self.ipv4.lookup_mut(net);  (k.into(),v) },
-            IpNet::V6(net) => { let (&k,v) = self.ipv6.lookup_mut(net);  (k.into(),v) },
+            IpNet::V4(net) => {
+                let (&k, v) = self.ipv4.lookup_mut(net);
+                (k.into(), v)
+            }
+            IpNet::V6(net) => {
+                let (&k, v) = self.ipv6.lookup_mut(net);
+                (k.into(), v)
+            }
         }
     }
 
     /// Iterates over all the entries.
     ///
     /// For a mutable access of values, use [`Self::iter_mut`]
-    pub fn iter(&self) -> impl Iterator<Item=(IpNet,&V)> + '_
-    {
-        self.ipv4.iter().map(|(k,v)| ((*k).into(), v))
-            .chain(self.ipv6.iter().map(|(k,v)| ((*k).into(), v)))
+    pub fn iter(&self) -> impl Iterator<Item = (IpNet, &V)> + '_ {
+        self.ipv4
+            .iter()
+            .map(|(k, v)| ((*k).into(), v))
+            .chain(self.ipv6.iter().map(|(k, v)| ((*k).into(), v)))
     }
     /// Iterates over all the entries with a mutable access to values.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=(IpNet,&mut V)> + '_
-    {
-        self.ipv4.iter_mut().map(|(k,v)| ((*k).into(), v))
-            .chain(self.ipv6.iter_mut().map(|(k,v)| ((*k).into(), v)))
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (IpNet, &mut V)> + '_ {
+        self.ipv4
+            .iter_mut()
+            .map(|(k, v)| ((*k).into(), v))
+            .chain(self.ipv6.iter_mut().map(|(k, v)| ((*k).into(), v)))
     }
 
     /// Gets a set of copy of all the keys in a trie set.
     pub fn prefixes(&self) -> IpLCTrieSet {
-        IpLCTrieSet { ipv4: self.ipv4.prefixes(), ipv6: self.ipv6.prefixes() }
+        IpLCTrieSet {
+            ipv4: self.ipv4.prefixes(),
+            ipv6: self.ipv6.prefixes(),
+        }
     }
 }
 
-
-impl<V:Default> FromIterator<(IpNet,V)> for IpLCTrieMap<V>
-{
-    fn from_iter<I:IntoIterator<Item=(IpNet,V)>>(iter: I) -> Self {
+impl<V: Default> FromIterator<(IpNet, V)> for IpLCTrieMap<V> {
+    fn from_iter<I: IntoIterator<Item = (IpNet, V)>>(iter: I) -> Self {
         IpRTrieMap::from_iter(iter).compress()
     }
 }

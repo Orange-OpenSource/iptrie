@@ -1,42 +1,48 @@
 //! Generic prefix trie set structures
-use std::num::NonZeroUsize;
-use crate::trie::patricia::RadixTrie;
-use crate::trie::lctrie::LevelCompressedTrie;
 use crate::prefix::*;
+use crate::trie::lctrie::LevelCompressedTrie;
+use crate::trie::patricia::RadixTrie;
+use std::num::NonZeroUsize;
 
-#[cfg(feature = "graphviz")] use crate::graphviz::DotWriter;
-#[cfg(feature = "graphviz")] use std::fmt::Display;
+#[cfg(feature = "graphviz")]
+use crate::graphviz::DotWriter;
 use crate::trie::common::Leaf;
+#[cfg(feature = "graphviz")]
+use std::fmt::Display;
 
 /// A set of Ip prefixes based on a radix binary trie
 #[derive(Clone)]
-pub struct RTrieSet<P: IpPrefix>(pub(crate) RadixTrie<P,()>);
+pub struct RTrieSet<P: IpPrefix>(pub(crate) RadixTrie<P, ()>);
 
 /// A set of Ip prefixes based on a level-compressed trie
-pub struct LCTrieSet<P: IpPrefix>(pub(crate) LevelCompressedTrie<P,()>);
+pub struct LCTrieSet<P: IpPrefix>(pub(crate) LevelCompressedTrie<P, ()>);
 
-impl<P:IpRootPrefix> RTrieSet<P>
-{
+impl<P: IpRootPrefix> RTrieSet<P> {
     /// Creates a new set which contains the root prefix.
     #[inline]
-    pub fn new() -> Self { Self::with_capacity(1000) }
+    pub fn new() -> Self {
+        Self::with_capacity(1000)
+    }
 
     /// Creates a new set with an initial capacity.
     ///
     /// The returned set already contains the root prefix.
     #[inline]
-    pub fn with_capacity(capacity: usize) -> Self { Self(RadixTrie::new((), capacity)) }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(RadixTrie::new((), capacity))
+    }
 }
 
-impl<P:IpPrefix> RTrieSet<P>
-{
+impl<P: IpPrefix> RTrieSet<P> {
     /// Returns the size of the set.
     ///
     /// Notice that it never equals zero since the top prefix is
     /// always present in the set.
     #[inline]
     #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> NonZeroUsize { self.0.len() }
+    pub fn len(&self) -> NonZeroUsize {
+        self.0.len()
+    }
 
     /// Compress this Patricia trie in a LC-Trie.
     ///
@@ -44,10 +50,14 @@ impl<P:IpPrefix> RTrieSet<P>
     /// performs multi bits checking. So the last one is more performant but it
     /// cannot be modified (no insertion or removal operations are provided).
     #[inline]
-    pub fn compress(self) -> LCTrieSet<P> { LCTrieSet(LevelCompressedTrie::new(self.0)) }
+    pub fn compress(self) -> LCTrieSet<P> {
+        LCTrieSet(LevelCompressedTrie::new(self.0))
+    }
 
     #[inline]
-    pub fn shrink_to_fit(&mut self) { self.0.shrink_to_fit() }
+    pub fn shrink_to_fit(&mut self) {
+        self.0.shrink_to_fit()
+    }
 
     /// Inserts a new element in the set.
     ///
@@ -69,9 +79,8 @@ impl<P:IpPrefix> RTrieSet<P>
     /// assert_eq!( trie.insert(ip20), false);
     /// ```
     #[inline]
-    pub fn insert(&mut self, k: P) -> bool
-    {
-        self.0.insert(k,()).is_none()
+    pub fn insert(&mut self, k: P) -> bool {
+        self.0.insert(k, ()).is_none()
     }
 
     /// Checks if an element is present (exact match).
@@ -95,9 +104,9 @@ impl<P:IpPrefix> RTrieSet<P>
     /// ```
     #[inline]
     pub fn contains<Q>(&self, k: &Q) -> bool
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
     {
         self.0.get(k).is_some()
     }
@@ -128,9 +137,9 @@ impl<P:IpPrefix> RTrieSet<P>
     /// ```
     #[inline]
     pub fn remove<Q>(&mut self, k: &Q) -> bool
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
     {
         self.0.remove(k).is_some()
     }
@@ -163,11 +172,9 @@ impl<P:IpPrefix> RTrieSet<P>
     /// assert_eq!(trie.get(&ip20).unwrap().to_string(), "1.1.1.2/20".to_string());
     /// ```
     #[inline]
-    pub fn replace(&mut self, k: P) -> Option<P>
-    {
-        self.0.replace(k,()).map(|l| *l.prefix())
+    pub fn replace(&mut self, k: P) -> Option<P> {
+        self.0.replace(k, ()).map(|l| *l.prefix())
     }
-
 
     /// Gets the value associated with an exact match of the key.
     ///
@@ -194,11 +201,12 @@ impl<P:IpPrefix> RTrieSet<P>
     /// ```
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&P>
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
-    { self.0.get(k).map(|(k,_)| k) }
-
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
+    {
+        self.0.get(k).map(|(k, _)| k)
+    }
 
     /// Gets the longest prefix which matches the given key.
     ///
@@ -228,61 +236,63 @@ impl<P:IpPrefix> RTrieSet<P>
     /// ```
     #[inline]
     pub fn lookup<Q>(&self, k: &Q) -> &P
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
     {
         self.0.lookup(k).0
     }
 
     /// Iterates over all the prefixes of this set.
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item=&P> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &P> + '_ {
         self.0.leaves.0.iter().map(Leaf::prefix)
     }
 
     #[inline]
-    pub fn info(&self) { self.0.info() }
+    pub fn info(&self) {
+        self.0.info()
+    }
 }
 
-impl<P:IpRootPrefix> Default for RTrieSet<P>
-{
+impl<P: IpRootPrefix> Default for RTrieSet<P> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<P:IpPrefix> Extend<P> for RTrieSet<P>
-{
-    fn extend<I: IntoIterator<Item=P>>(&mut self, iter: I)
-    {
-        iter.into_iter().for_each(| item | { self.insert(item); } )
+impl<P: IpPrefix> Extend<P> for RTrieSet<P> {
+    fn extend<I: IntoIterator<Item = P>>(&mut self, iter: I) {
+        iter.into_iter().for_each(|item| {
+            self.insert(item);
+        })
     }
 }
 
-impl<P:IpRootPrefix> FromIterator<P> for RTrieSet<P>
-{
-    fn from_iter<I:IntoIterator<Item=P>>(iter: I) -> Self
-    {
+impl<P: IpRootPrefix> FromIterator<P> for RTrieSet<P> {
+    fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> Self {
         let mut trieset = Self::default();
         trieset.extend(iter);
         trieset
     }
 }
 
-impl<P:IpPrefix> LCTrieSet<P>
-{
+impl<P: IpPrefix> LCTrieSet<P> {
     /// Returns the size of the set.
     ///
     /// Notice that it never equals zero since the top prefix is
     /// always present in the set.
     #[inline]
     #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> NonZeroUsize { self.0.len() }
+    pub fn len(&self) -> NonZeroUsize {
+        self.0.len()
+    }
 
     #[inline]
-    pub fn info(&self) { self.0.info() }
+    pub fn info(&self) {
+        self.0.info()
+    }
 
     /// Checks if an element is present (exact match).
     ///
@@ -306,9 +316,9 @@ impl<P:IpPrefix> LCTrieSet<P>
     /// ```
     #[inline]
     pub fn contains<Q>(&self, k: &Q) -> bool
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
     {
         self.0.get(k).is_some()
     }
@@ -340,11 +350,12 @@ impl<P:IpPrefix> LCTrieSet<P>
     /// ```
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&P>
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
-    { self.0.get(k).map(|(k,_)| k) }
-
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
+    {
+        self.0.get(k).map(|(k, _)| k)
+    }
 
     /// Gets the longest prefix which matches the given key.
     ///
@@ -376,43 +387,36 @@ impl<P:IpPrefix> LCTrieSet<P>
     /// ```
     #[inline]
     pub fn lookup<Q>(&self, k: &Q) -> &P
-        where
-            Q: IpPrefix<Addr=P::Addr>,
-            P: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = P::Addr>,
+        P: IpPrefixCovering<Q>,
     {
         self.0.lookup(k).0
     }
 
     /// Iterates over all the prefixes of this set.
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item=&P> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &P> + '_ {
         self.0.leaves.0.iter().map(Leaf::prefix)
     }
 }
 
-impl<P:IpRootPrefix> FromIterator<P> for LCTrieSet<P>
-{
-    fn from_iter<I:IntoIterator<Item=P>>(iter: I) -> Self
-    {
+impl<P: IpRootPrefix> FromIterator<P> for LCTrieSet<P> {
+    fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> Self {
         RTrieSet::from_iter(iter).compress()
     }
 }
 
-
-#[cfg(feature= "graphviz")]
-impl<P:IpPrefix+Display> DotWriter for RTrieSet<P>
-{
+#[cfg(feature = "graphviz")]
+impl<P: IpPrefix + Display> DotWriter for RTrieSet<P> {
     fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.0.write_dot(dot)
     }
 }
 
-#[cfg(feature= "graphviz")]
-impl<P:IpPrefix+Display> DotWriter for LCTrieSet<P>
-{
+#[cfg(feature = "graphviz")]
+impl<P: IpPrefix + Display> DotWriter for LCTrieSet<P> {
     fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.0.write_dot(dot)
     }
 }
-
-

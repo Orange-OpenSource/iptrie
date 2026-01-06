@@ -1,21 +1,33 @@
-use std::cmp::Ordering;
-use ipnet::{Ipv4Net,Ipv6Net};
-use std::net::{Ipv4Addr,Ipv6Addr};
 use crate::*;
+use ipnet::{Ipv4Net, Ipv6Net};
+use std::cmp::Ordering;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 #[doc(hidden)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum IpPrefixCoverage { NoCover, WiderRange, SameRange }
+pub enum IpPrefixCoverage {
+    NoCover,
+    WiderRange,
+    SameRange,
+}
 
 impl IpPrefixCoverage {
-    #[inline] fn is_wider(&self) -> bool { *self == IpPrefixCoverage::WiderRange }
-    #[inline] fn is_same(&self) -> bool { *self == IpPrefixCoverage::SameRange }
-    #[inline] fn is_covering(&self) -> bool { *self != IpPrefixCoverage::NoCover }
+    #[inline]
+    fn is_wider(&self) -> bool {
+        *self == IpPrefixCoverage::WiderRange
+    }
+    #[inline]
+    fn is_same(&self) -> bool {
+        *self == IpPrefixCoverage::SameRange
+    }
+    #[inline]
+    fn is_covering(&self) -> bool {
+        *self != IpPrefixCoverage::NoCover
+    }
 }
 
 /// A trait to check the prefix coverage
-pub trait IpPrefixCovering<P>
-{
+pub trait IpPrefixCovering<P> {
     /// Checks the coverage of this prefix against a set of adress
     ///
     /// * `SameRange` means that the two prefixes are equivalent
@@ -50,16 +62,23 @@ pub trait IpPrefixCovering<P>
     /// assert! (a.covers(&b) && b.covers(&a)); // but prefixes are equivalent
     /// ```
     #[inline]
-    fn covers(&self, other: &P) -> bool{ self.covering(other).is_covering() }
+    fn covers(&self, other: &P) -> bool {
+        self.covering(other).is_covering()
+    }
 
-    #[inline] #[doc(hidden)]
-    fn covers_striclty(&self, other: &P) -> bool{ self.covering(other).is_wider() }
-    #[inline] #[doc(hidden)]
-    fn covers_equally(&self, other: &P) -> bool{ self.covering(other).is_same() }
+    #[inline]
+    #[doc(hidden)]
+    fn covers_striclty(&self, other: &P) -> bool {
+        self.covering(other).is_wider()
+    }
+    #[inline]
+    #[doc(hidden)]
+    fn covers_equally(&self, other: &P) -> bool {
+        self.covering(other).is_same()
+    }
 }
 
-impl<P:IpPrefix> IpPrefixCovering<Self> for P
-{
+impl<P: IpPrefix> IpPrefixCovering<Self> for P {
     #[inline]
     fn covering(&self, other: &Self) -> IpPrefixCoverage {
         if other.bitslot() & self.bitmask() != self.bitslot_trunc() {
@@ -68,7 +87,7 @@ impl<P:IpPrefix> IpPrefixCovering<Self> for P
             match self.len().cmp(&other.len()) {
                 Ordering::Less => IpPrefixCoverage::WiderRange,
                 Ordering::Equal => IpPrefixCoverage::SameRange,
-                Ordering::Greater => IpPrefixCoverage::NoCover
+                Ordering::Greater => IpPrefixCoverage::NoCover,
             }
         }
     }
@@ -86,12 +105,12 @@ macro_rules! ipcover {
                     match self.len().cmp(&other.len()) {
                         Ordering::Less => IpPrefixCoverage::WiderRange,
                         Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCover
+                        Ordering::Greater => IpPrefixCoverage::NoCover,
                     }
                 }
             }
         }
-    }
+    };
 }
 
 ipcover!(Ipv4Prefix, Ipv4Net);
@@ -106,9 +125,6 @@ ipcover!(Ipv6Prefix, Ipv6Addr);
 ipcover!(Ipv6Net, Ipv6Prefix);
 ipcover!(Ipv6Net, Ipv6Addr);
 
-
-
-
 // coverage impl. relative to IpPrefix56 or IpNetAddr
 // (which has a slot shorter than the others)
 macro_rules! ipcover_for_ipv6_on_u64 {
@@ -122,18 +138,17 @@ macro_rules! ipcover_for_ipv6_on_u64 {
                     match self.len().cmp(&other.len()) {
                         Ordering::Less => IpPrefixCoverage::WiderRange,
                         Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCover
+                        Ordering::Greater => IpPrefixCoverage::NoCover,
                     }
                 }
             }
         }
-    }
+    };
 }
 
 ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Prefix);
 ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Net);
 ipcover_for_ipv6_on_u64!(Ipv6NetPrefix, Ipv6Addr);
-
 
 macro_rules! ipcover_of_ipv6_on_u64 {
     ($self:ty, $short:ty) => {
@@ -146,19 +161,16 @@ macro_rules! ipcover_of_ipv6_on_u64 {
                     match self.len().cmp(&other.len()) {
                         Ordering::Less => IpPrefixCoverage::WiderRange,
                         Ordering::Equal => IpPrefixCoverage::SameRange,
-                        Ordering::Greater => IpPrefixCoverage::NoCover
+                        Ordering::Greater => IpPrefixCoverage::NoCover,
                     }
                 }
             }
         }
-    }
+    };
 }
 
 ipcover_of_ipv6_on_u64!(Ipv6Prefix, Ipv6NetPrefix);
 ipcover_of_ipv6_on_u64!(Ipv6Net, Ipv6NetPrefix);
-
-
-
 
 // Equality between prefix...
 macro_rules! ipprefix_eq {
@@ -169,14 +181,14 @@ macro_rules! ipprefix_eq {
                 self.covers_equally(other)
             }
         }
-    }
+    };
 }
 
-ipprefix_eq!(Ipv6Net,Ipv6NetPrefix);
-ipprefix_eq!(Ipv6Net,Ipv6Prefix);
+ipprefix_eq!(Ipv6Net, Ipv6NetPrefix);
+ipprefix_eq!(Ipv6Net, Ipv6Prefix);
 
-ipprefix_eq!(Ipv6NetPrefix,Ipv6Net);
-ipprefix_eq!(Ipv6NetPrefix,Ipv6Prefix);
+ipprefix_eq!(Ipv6NetPrefix, Ipv6Net);
+ipprefix_eq!(Ipv6NetPrefix, Ipv6Prefix);
 
-ipprefix_eq!(Ipv6Prefix,Ipv6Net);
-ipprefix_eq!(Ipv6Prefix,Ipv6NetPrefix);
+ipprefix_eq!(Ipv6Prefix, Ipv6Net);
+ipprefix_eq!(Ipv6Prefix, Ipv6NetPrefix);

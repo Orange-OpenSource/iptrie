@@ -1,49 +1,56 @@
 //! Generic prefix trie map structures
-use std::num::NonZeroUsize;
-use crate::trie::patricia::RadixTrie;
-use crate::trie::lctrie::LevelCompressedTrie;
 use crate::set::*;
+use crate::trie::lctrie::LevelCompressedTrie;
+use crate::trie::patricia::RadixTrie;
+use std::num::NonZeroUsize;
 
 use crate::prefix::*;
 
-#[cfg(feature = "graphviz")] use crate::graphviz::DotWriter;
-#[cfg(feature = "graphviz")] use std::fmt::Display;
+#[cfg(feature = "graphviz")]
+use crate::graphviz::DotWriter;
 use crate::trie::common::Leaf;
+#[cfg(feature = "graphviz")]
+use std::fmt::Display;
 
 /// A map of Ip prefixes based on a radix binary trie
 #[derive(Clone)]
-pub struct RTrieMap<K,V>(pub(crate) RadixTrie<K,V>);
+pub struct RTrieMap<K, V>(pub(crate) RadixTrie<K, V>);
 
 /// A map of Ip prefixes based on a level-compressed trie
-pub struct LCTrieMap<K,V>(pub(crate) LevelCompressedTrie<K,V>);
+pub struct LCTrieMap<K, V>(pub(crate) LevelCompressedTrie<K, V>);
 
-
-impl<K:IpRootPrefix,V:Default> RTrieMap<K,V>
-{
+impl<K: IpRootPrefix, V: Default> RTrieMap<K, V> {
     /// Create a new map.
     ///
     /// The root prefix is associated with the default value of `V`.
     #[inline]
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// Create a new map with a initial capacity.
     ///
     /// The root prefix is associated with the default value of `V`.
     #[inline]
-    pub fn with_capacity(capacity:usize) -> Self { Self::with_root_and_capacity(V::default(), capacity)}
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self::with_root_and_capacity(V::default(), capacity)
+    }
 }
 
-impl<K:IpRootPrefix,V:Default> Default for RTrieMap<K,V>
-{
-    #[inline] fn default() -> Self { Self::with_root(V::default()) }
+impl<K: IpRootPrefix, V: Default> Default for RTrieMap<K, V> {
+    #[inline]
+    fn default() -> Self {
+        Self::with_root(V::default())
+    }
 }
 
-impl<K:IpRootPrefix,V> RTrieMap<K,V>
-{
+impl<K: IpRootPrefix, V> RTrieMap<K, V> {
     /// Creates a new trie map with the specified value associated to the
     /// root prefix.
     #[inline]
-    pub fn with_root(root: V) -> Self { Self::with_root_and_capacity(root, 1000) }
+    pub fn with_root(root: V) -> Self {
+        Self::with_root_and_capacity(root, 1000)
+    }
 
     /// Creates a new trie map with a initial capacity.
     #[inline]
@@ -52,8 +59,7 @@ impl<K:IpRootPrefix,V> RTrieMap<K,V>
     }
 }
 
-impl<K:IpPrefix,V> RTrieMap<K,V>
-{
+impl<K: IpPrefix, V> RTrieMap<K, V> {
     /// Returns the size of the map.
     ///
     /// Notice that it never equals zero since the top prefix is
@@ -69,7 +75,9 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> NonZeroUsize { self.0.len() }
+    pub fn len(&self) -> NonZeroUsize {
+        self.0.len()
+    }
 
     /// Compress this Patricia trie in a LC-Trie.
     ///
@@ -77,10 +85,14 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// performs multi bits checking. So the last one is more performant but it
     /// cannot be modified (no insertion or removal operations are provided).
     #[inline]
-    pub fn compress(self) -> LCTrieMap<K,V> { LCTrieMap(LevelCompressedTrie::new(self.0)) }
+    pub fn compress(self) -> LCTrieMap<K, V> {
+        LCTrieMap(LevelCompressedTrie::new(self.0))
+    }
 
     #[inline]
-    pub fn shrink_to_fit(&mut self) { self.0.shrink_to_fit() }
+    pub fn shrink_to_fit(&mut self) {
+        self.0.shrink_to_fit()
+    }
 
     /// Inserts a new entry in the map.
     ///
@@ -134,11 +146,11 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&V>
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
     {
-        self.0.get(k).map(|(_,v)| v)
+        self.0.get(k).map(|(_, v)| v)
     }
 
     /// Gets a mutable access to the value associated with an exact match of the key.
@@ -167,11 +179,11 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
     {
-        self.0.get_mut(k).map(|(_,v)| v)
+        self.0.get_mut(k).map(|(_, v)| v)
     }
 
     /// Removes a previously inserted prefix (exact match).
@@ -198,9 +210,9 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
     {
         self.0.remove(k)
     }
@@ -236,10 +248,12 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     pub fn lookup<Q>(&self, k: &Q) -> (&K, &V)
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
-    { self.0.lookup(k) }
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
+    {
+        self.0.lookup(k)
+    }
 
     /// Gets a mutable access to the value associated with a longest prefix match of the key.
     ///
@@ -262,54 +276,51 @@ impl<K:IpPrefix,V> RTrieMap<K,V>
     /// ```
     #[inline]
     pub fn lookup_mut<Q>(&mut self, k: &Q) -> (&K, &mut V)
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
-    { self.0.lookup_mut(k) }
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
+    {
+        self.0.lookup_mut(k)
+    }
 
     /// Iterates over all the entries.
     ///
     /// For a mutable access of values, use [`Self::iter_mut`]
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item=(&K,&V)> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
         self.0.iter().map(Leaf::get)
     }
 
     /// Iterates over all the entries with a mutable access to values.
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=(&K,&mut V)> + '_ {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> + '_ {
         self.0.iter_mut().map(Leaf::get_mut)
     }
 
     /// Gets a set of copy of all the keys in a trie set.
     #[inline]
-    pub fn prefixes(&self) -> RTrieSet<K>
-    {
+    pub fn prefixes(&self) -> RTrieSet<K> {
         RTrieSet(self.0.map(|_| ()))
     }
 }
 
-
-impl<K:IpPrefix,V> Extend<(K, V)> for RTrieMap<K,V>
-{
-    fn extend<I: IntoIterator<Item=(K,V)>>(&mut self, iter: I)
-    {
-        iter.into_iter().for_each(|(k,v)| {self.insert(k,v);})
+impl<K: IpPrefix, V> Extend<(K, V)> for RTrieMap<K, V> {
+    fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, iter: I) {
+        iter.into_iter().for_each(|(k, v)| {
+            self.insert(k, v);
+        })
     }
 }
 
-impl<K:IpRootPrefix,V:Default> FromIterator<(K, V)> for RTrieMap<K,V>
-{
-    fn from_iter<I:IntoIterator<Item=(K,V)>>(iter: I) -> Self
-    {
+impl<K: IpRootPrefix, V: Default> FromIterator<(K, V)> for RTrieMap<K, V> {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         let mut triemap = Self::default();
         triemap.extend(iter);
         triemap
     }
 }
 
-impl<K:IpPrefix,V> LCTrieMap<K,V>
-{
+impl<K: IpPrefix, V> LCTrieMap<K, V> {
     /// Returns the size of the map.
     ///
     /// Notice that it never equals zero since the top prefix is
@@ -319,7 +330,6 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     pub fn len(&self) -> NonZeroUsize {
         self.0.len()
     }
-
 
     /// Gets the value associated with an exact match of the key.
     ///
@@ -349,10 +359,12 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// ```
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&V>
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
-    { self.0.get(k).map(|(_,v)| v) }
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
+    {
+        self.0.get(k).map(|(_, v)| v)
+    }
 
     /// Gets a mutable access to the value associated with an exact match of the key.
     ///
@@ -382,11 +394,11 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// ```
     #[inline]
     pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
     {
-        self.0.get_mut(k).map(|(_,v)| v)
+        self.0.get_mut(k).map(|(_, v)| v)
     }
 
     /// Gets the value associated with the longest prefix match of the key.
@@ -421,12 +433,13 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// assert_eq!( lctrie.lookup(&addr), (&ip24, &24));
     /// ```
     #[inline]
-    pub fn lookup<Q>(&self, k: &Q) -> (&K,&V)
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
-    { self.0.lookup(k) }
-
+    pub fn lookup<Q>(&self, k: &Q) -> (&K, &V)
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
+    {
+        self.0.lookup(k)
+    }
 
     /// Gets a mutable access to the value associated with a longest prefix match of the key.
     ///
@@ -451,14 +464,18 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// assert_eq!( lctrie.get(&ip20), Some(&42));
     /// ```
     #[inline]
-    pub fn lookup_mut<Q>(&mut self, k: &Q) -> (&K,&mut V)
-        where
-            Q: IpPrefix<Addr=K::Addr>,
-            K: IpPrefixCovering<Q>
-    { self.0.lookup_mut(k) }
+    pub fn lookup_mut<Q>(&mut self, k: &Q) -> (&K, &mut V)
+    where
+        Q: IpPrefix<Addr = K::Addr>,
+        K: IpPrefixCovering<Q>,
+    {
+        self.0.lookup_mut(k)
+    }
 
     #[inline]
-    pub fn info(&self) { self.0.info() }
+    pub fn info(&self) {
+        self.0.info()
+    }
 
     /// Iterates over all the entries.
     ///
@@ -474,7 +491,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// assert_eq!( lctrie.len().get(), lctrie.iter().count());
     /// ```
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item=(&K,&V)> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
         self.0.leaves.0.iter().map(Leaf::get)
     }
 
@@ -492,7 +509,7 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// assert_eq!( lctrie.lookup(&Ipv4Prefix::root()).1, &43);
     /// ```
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=(&K,&mut V)> + '_ {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> + '_ {
         self.0.leaves.0.iter_mut().map(Leaf::get_mut)
     }
 
@@ -506,32 +523,27 @@ impl<K:IpPrefix,V> LCTrieMap<K,V>
     /// assert_eq!( lctrie.len(), lctrie.prefixes().len());
     /// ```
     #[inline]
-    pub fn prefixes(&self) -> LCTrieSet<K>
-    {
+    pub fn prefixes(&self) -> LCTrieSet<K> {
         LCTrieSet(self.0.map(|_| ()))
     }
 }
 
-impl<K:IpRootPrefix,V:Default> FromIterator<(K,V)> for LCTrieMap<K,V>
-{
-    fn from_iter<I:IntoIterator<Item=(K,V)>>(iter: I) -> Self {
+impl<K: IpRootPrefix, V: Default> FromIterator<(K, V)> for LCTrieMap<K, V> {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         RTrieMap::from_iter(iter).compress()
     }
 }
 
-#[cfg(feature= "graphviz")]
-impl<P:IpPrefix+Display,V> DotWriter for RTrieMap<P,V>
-{
+#[cfg(feature = "graphviz")]
+impl<P: IpPrefix + Display, V> DotWriter for RTrieMap<P, V> {
     fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.0.write_dot(dot)
     }
 }
 
-#[cfg(feature= "graphviz")]
-impl<P: IpPrefix +Display,V> DotWriter for LCTrieMap<P,V>
-{
+#[cfg(feature = "graphviz")]
+impl<P: IpPrefix + Display, V> DotWriter for LCTrieMap<P, V> {
     fn write_dot(&self, dot: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.0.write_dot(dot)
     }
 }
-
