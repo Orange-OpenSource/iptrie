@@ -5,9 +5,9 @@ use std::iter::repeat_with;
 use std::net::Ipv6Addr;
 use test::Bencher;
 
-use iptrie::*;
-use iptrie::set::{RTrieSet, LCTrieSet};
 use ip_network_table_deps_treebitmap::IpLookupTable;
+use iptrie::set::{LCTrieSet, RTrieSet};
+use iptrie::*;
 
 fn random_ipv6_prefix() -> impl Iterator<Item = Ipv6Prefix> {
     use rand::distributions::*;
