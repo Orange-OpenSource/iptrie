@@ -131,12 +131,12 @@ impl IpRTrieSet {
 
 impl Extend<Ipv4Net> for IpRTrieSet {
     fn extend<I: IntoIterator<Item = Ipv4Net>>(&mut self, iter: I) {
-        self.ipv4.extend(iter.into_iter().map(|i| i.into()))
+        self.ipv4.extend(iter.into_iter().map(|i:Ipv4Net| i.into()))
     }
 }
 impl Extend<Ipv6Net> for IpRTrieSet {
     fn extend<I: IntoIterator<Item = Ipv6Net>>(&mut self, iter: I) {
-        self.ipv6.extend(iter.into_iter().map(|i| i.into()))
+        self.ipv6.extend(iter.into_iter().map(|i:Ipv6Net| i.into()))
     }
 }
 
@@ -397,13 +397,13 @@ impl<V> IpRTrieMap<V> {
 impl<V> Extend<(Ipv4Net, V)> for IpRTrieMap<V> {
     fn extend<I: IntoIterator<Item = (Ipv4Net, V)>>(&mut self, iter: I) {
         self.ipv4
-            .extend(iter.into_iter().map(|(i, v)| (i.into(), v)))
+            .extend(iter.into_iter().map(|(i, v):(Ipv4Net,_)| (i.into(), v)))
     }
 }
 impl<V> Extend<(Ipv6Net, V)> for IpRTrieMap<V> {
     fn extend<I: IntoIterator<Item = (Ipv6Net, V)>>(&mut self, iter: I) {
         self.ipv6
-            .extend(iter.into_iter().map(|(i, v)| (i.into(), v)))
+            .extend(iter.into_iter().map(|(i, v):(Ipv6Net,_)| (i.into(), v)))
     }
 }
 impl<V> Extend<(IpNet, V)> for IpRTrieMap<V> {
