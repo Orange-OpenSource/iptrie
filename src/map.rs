@@ -8,7 +8,7 @@ use crate::prefix::*;
 
 #[cfg(feature = "graphviz")]
 use crate::graphviz::DotWriter;
-use crate::trie::common::Leaf;
+
 #[cfg(feature = "graphviz")]
 use std::fmt::Display;
 
@@ -288,13 +288,18 @@ impl<K: IpPrefix, V> RTrieMap<K, V> {
     /// For a mutable access of values, use [`Self::iter_mut`]
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
-        self.0.iter().map(Leaf::get)
+        self.0.iter().map(|(k, v)| (k, v))
     }
 
     /// Iterates over all the entries with a mutable access to values.
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> + '_ {
-        self.0.iter_mut().map(Leaf::get_mut)
+        self.0.iter_mut().map(|(k, v)| (&*k, v))
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.0.as_slice()
     }
 
     /// Gets a set of copy of all the keys in a trie set.
@@ -492,7 +497,7 @@ impl<K: IpPrefix, V> LCTrieMap<K, V> {
     /// ```
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_ {
-        self.0.leaves.0.iter().map(Leaf::get)
+        self.0.leaves.0.iter().map(|(k, v)| (k, v))
     }
 
     /// Iterates over all the entries with a mutable access to values.
@@ -510,7 +515,12 @@ impl<K: IpPrefix, V> LCTrieMap<K, V> {
     /// ```
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> + '_ {
-        self.0.leaves.0.iter_mut().map(Leaf::get_mut)
+        self.0.leaves.0.iter_mut().map(|(k, v)| (&*k, v))
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.0.leaves.0.as_slice()
     }
 
     /// Gets a set of copy of all the keys in a trie set.

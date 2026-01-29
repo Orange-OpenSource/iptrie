@@ -1,57 +1,33 @@
 use crate::prefix::IpPrefix;
 use std::ops::{Index, IndexMut};
-use std::{fmt, iter, vec};
+use std::{fmt, vec};
 
 #[derive(Clone)]
-pub(crate) struct TrieLeaves<L>(pub(crate) Vec<L>);
+pub(crate) struct TrieLeaves<K, V>(pub(crate) Vec<(K, V)>);
 
-#[derive(Clone)]
-pub(crate) struct Leaf<K, V>((K, V));
-
-impl<K, V> Leaf<K, V> {
-    pub fn new(k: K, v: V) -> Self {
-        Self((k, v))
-    }
-    pub fn prefix(&self) -> &K {
-        &self.0 .0
-    }
-    pub fn get(&self) -> (&K, &V) {
-        (&self.0 .0, &self.0 .1)
-    }
-    pub fn get_mut(&mut self) -> (&K, &mut V) {
-        (&self.0 .0, &mut self.0 .1)
-    }
-}
-
-impl<K, V> From<Leaf<K, V>> for (K, V) {
-    fn from(leaf: Leaf<K, V>) -> Self {
-        leaf.0
-    }
-}
-
-impl<K: IpPrefix, V> TrieLeaves<Leaf<K, V>> {
+impl<K: IpPrefix, V> TrieLeaves<K, V> {
     pub fn new(capacity: usize, k: K, v: V) -> Self {
         let mut leaves = Vec::with_capacity(capacity);
-        leaves.push(Leaf::new(k, v));
+        leaves.push((k, v));
         Self(leaves)
     }
 }
 
-impl<L> TrieLeaves<L> {
+impl<K, V> TrieLeaves<K, V> {
     // returns the index of the added leaf
-    pub fn push(&mut self, leaf: L) -> LeafIndex {
+    pub fn push(&mut self, leaf: (K, V)) -> LeafIndex {
         let index = self.0.len().into();
         self.0.push(leaf);
         index
     }
 
-    pub fn remove_last(&mut self) -> Option<L> {
+    pub fn remove_last(&mut self) -> Option<(K, V)> {
         debug_assert!(self.0.len() > 1);
         self.0.pop()
     }
 
     #[allow(dead_code)]
-    pub fn remove(&mut self, i: LeafIndex) -> L {
+    pub fn remove(&mut self, i: LeafIndex) -> (K, V) {
         debug_assert!(!i.is_root_leaf());
         self.0.swap_remove(i.index())
     }
@@ -61,8 +37,8 @@ impl<L> TrieLeaves<L> {
     }
 }
 
-impl<L> Index<LeafIndex> for TrieLeaves<L> {
-    type Output = L;
+impl<K, V> Index<LeafIndex> for TrieLeaves<K, V> {
+    type Output = (K, V);
 
     fn index(&self, i: LeafIndex) -> &Self::Output {
         debug_assert!(i.index() < self.0.len());
@@ -70,20 +46,20 @@ impl<L> Index<LeafIndex> for TrieLeaves<L> {
     }
 }
 
-impl<L> IndexMut<LeafIndex> for TrieLeaves<L> {
+impl<K, V> IndexMut<LeafIndex> for TrieLeaves<K, V> {
     fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output {
         debug_assert!(i.index() < self.0.len());
         unsafe { self.0.get_unchecked_mut(i.index()) }
     }
 }
 
-impl<K, V> IntoIterator for TrieLeaves<Leaf<K, V>> {
+impl<K, V> IntoIterator for TrieLeaves<K, V> {
     type Item = (K, V);
-    type IntoIter = iter::Map<vec::IntoIter<Leaf<K, V>>, fn(Leaf<K, V>) -> Self::Item>;
+    type IntoIter = vec::IntoIter<(K, V)>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter().map(Leaf::into)
+        self.0.into_iter()
     }
 }
 

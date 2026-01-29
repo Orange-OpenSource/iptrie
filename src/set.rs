@@ -6,7 +6,7 @@ use std::num::NonZeroUsize;
 
 #[cfg(feature = "graphviz")]
 use crate::graphviz::DotWriter;
-use crate::trie::common::Leaf;
+
 #[cfg(feature = "graphviz")]
 use std::fmt::Display;
 
@@ -173,7 +173,7 @@ impl<P: IpPrefix> RTrieSet<P> {
     /// ```
     #[inline]
     pub fn replace(&mut self, k: P) -> Option<P> {
-        self.0.replace(k, ()).map(|l| *l.prefix())
+        self.0.replace(k, ()).map(|(k, _)| k)
     }
 
     /// Gets the value associated with an exact match of the key.
@@ -246,7 +246,7 @@ impl<P: IpPrefix> RTrieSet<P> {
     /// Iterates over all the prefixes of this set.
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &P> + '_ {
-        self.0.leaves.0.iter().map(Leaf::prefix)
+        self.0.leaves.0.iter().map(|(k, _)| k)
     }
 
     #[inline]
@@ -397,7 +397,7 @@ impl<P: IpPrefix> LCTrieSet<P> {
     /// Iterates over all the prefixes of this set.
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &P> + '_ {
-        self.0.leaves.0.iter().map(Leaf::prefix)
+        self.0.leaves.0.iter().map(|(k, _)| k)
     }
 }
 

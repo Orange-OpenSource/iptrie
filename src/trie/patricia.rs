@@ -8,18 +8,23 @@ use std::ops::{Index, IndexMut};
 #[derive(Clone)]
 pub(crate) struct RadixTrie<K, V> {
     pub(crate) branching: BranchingTree,
-    pub(crate) leaves: TrieLeaves<Leaf<K, V>>,
+    pub(crate) leaves: TrieLeaves<K, V>,
 }
 
 impl<K, V> RadixTrie<K, V> {
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &Leaf<K, V>> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = &(K, V)> + '_ {
         self.leaves.0.iter()
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Leaf<K, V>> + '_ {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut (K, V)> + '_ {
         self.leaves.0.iter_mut()
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.leaves.0.as_slice()
     }
 
     #[inline]
@@ -48,18 +53,12 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
     pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> RadixTrie<K, W> {
         RadixTrie {
             branching: self.branching.clone(),
-            leaves: TrieLeaves(
-                self.leaves
-                    .0
-                    .iter()
-                    .map(|leaf| Leaf::new(*leaf.prefix(), f(leaf.get().1)))
-                    .collect(),
-            ),
+            leaves: TrieLeaves(self.leaves.0.iter().map(|(k, v)| (*k, f(v))).collect()),
         }
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
-        let addedleaf = self.leaves.push(Leaf::new(k, v));
+        let addedleaf = self.leaves.push((k, v));
         let addedpfx = self[addedleaf];
 
         let (deepestbranching, deepestleaf) =
@@ -90,17 +89,16 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
                     return None;
                 }
                 IpPrefixCoverage::SameRange => {
-                    let leaf = self.leaves.remove_last().unwrap();
-                    let mut v = <Leaf<K, V> as Into<(K, V)>>::into(leaf).1;
-                    std::mem::swap(&mut v, self.leaves[l].get_mut().1);
+                    let mut v = self.leaves.remove_last().unwrap().1;
+                    std::mem::swap(&mut v, &mut self.leaves[l].1);
                     return Some(v);
                 }
             }
         }
     }
 
-    pub fn replace(&mut self, k: K, v: V) -> Option<Leaf<K, V>> {
-        let addedleaf = self.leaves.push(Leaf::new(k, v));
+    pub fn replace(&mut self, k: K, v: V) -> Option<(K, V)> {
+        let addedleaf = self.leaves.push((k, v));
         let addedpfx = self[addedleaf];
 
         let (deepestbranching, deepestleaf) =
@@ -147,11 +145,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        if k.len() == self[l].len() {
-            Some(self.leaves[l].get())
-        } else {
-            None
-        }
+        let (p, v) = &self.leaves[l];
+        (k.len() == p.len()).then_some((p, v))
     }
 
     pub fn get_mut<Q>(&mut self, k: &Q) -> Option<(&K, &mut V)>
@@ -160,11 +155,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        if k.len() == self[l].len() {
-            Some(self.leaves[l].get_mut())
-        } else {
-            None
-        }
+        let (p, v) = &mut self.leaves[l];
+        (k.len() == p.len()).then_some((&*p, v))
     }
 
     pub fn remove<Q>(&mut self, k: &Q) -> Option<V>
@@ -210,8 +202,7 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
                 bb = self[bb].parent; // climb up the escape chain
             }
             // effective removal of the leaf
-            let removed = self.leaves.0.swap_remove(l.index());
-            Some(<Leaf<K, V> as Into<(K, V)>>::into(removed).1)
+            Some(self.leaves.0.swap_remove(l.index()).1)
         }
     }
 
@@ -244,7 +235,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        self.leaves[l].get()
+        let (p, v) = &self.leaves[l];
+        (p, v)
     }
 
     #[inline]
@@ -254,7 +246,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        self.leaves[l].get_mut()
+        let (p, v) = &mut self.leaves[l];
+        (&*p, v)
     }
 
     pub fn info(&self) {
@@ -266,7 +259,7 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         );
 
         let branching = self.branching.0.len() * std::mem::size_of::<Branching>() / 1000;
-        let leaves = self.leaves.len() * std::mem::size_of::<Leaf<K, V>>() / 1000;
+        let leaves = self.leaves.len() * std::mem::size_of::<(K, V)>() / 1000;
         println!(
             "memory: {:?}k + {:?}k = {:?}k",
             branching,
@@ -347,7 +340,7 @@ impl<K, V> Index<LeafIndex> for RadixTrie<K, V> {
     type Output = K;
     #[inline]
     fn index(&self, i: LeafIndex) -> &Self::Output {
-        self.leaves[i].prefix()
+        &self.leaves[i].0
     }
 }
 

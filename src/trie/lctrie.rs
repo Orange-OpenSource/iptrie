@@ -10,7 +10,7 @@ use crate::trie::common::*;
 
 pub(crate) struct LevelCompressedTrie<K, V> {
     branching: CompressedTree,
-    pub(crate) leaves: TrieLeaves<Leaf<K, V>>,
+    pub(crate) leaves: TrieLeaves<K, V>,
 }
 
 impl<K, V> LevelCompressedTrie<K, V> {
@@ -53,13 +53,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
     pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> LevelCompressedTrie<K, W> {
         LevelCompressedTrie {
             branching: self.branching.clone(),
-            leaves: TrieLeaves(
-                self.leaves
-                    .0
-                    .iter()
-                    .map(|leaf| Leaf::new(*leaf.prefix(), f(leaf.get().1)))
-                    .collect(),
-            ),
+            leaves: TrieLeaves(self.leaves.0.iter().map(|(k, v)| ((*k), f(v))).collect()),
         }
     }
 
@@ -167,11 +161,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let l = &self.leaves[self.inner_lookup(k)];
-        if k.len() == l.prefix().len() {
-            Some(l.get())
-        } else {
-            None
-        }
+        (k.len() == l.0.len()).then_some((&l.0, &l.1))
     }
 
     #[inline]
@@ -182,11 +172,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
     {
         let l = self.inner_lookup(k);
         let l = &mut self.leaves[l];
-        if k.len() == l.prefix().len() {
-            Some(l.get_mut())
-        } else {
-            None
-        }
+        (k.len() == l.0.len()).then_some((&l.0, &mut l.1))
     }
 
     #[inline]
@@ -195,7 +181,8 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         Q: IpPrefix<Addr = K::Addr>,
         K: IpPrefixCovering<Q>,
     {
-        self.leaves[self.inner_lookup(k)].get()
+        let (k, v) = &self.leaves[self.inner_lookup(k)];
+        (k, v)
     }
 
     #[inline]
@@ -205,7 +192,8 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let l = self.inner_lookup(k);
-        self.leaves[l].get_mut()
+        let (k, v) = &mut self.leaves[l];
+        (&*k, v)
     }
 
     #[inline]
@@ -282,7 +270,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
                 println!("shift: {:?}", counts);
         */
         let branching = self.branching.memzone.len() * std::mem::size_of::<NodeIndex>() / 1000;
-        let leaves = self.leaves.len() * std::mem::size_of::<Leaf<K, V>>() / 1000;
+        let leaves = self.leaves.len() * std::mem::size_of::<(K, V)>() / 1000;
         println!(
             "memory: {:?}k + {:?}k = {:?}k",
             branching,
@@ -298,7 +286,7 @@ impl<K: IpPrefix, V> Index<LeafIndex> for LevelCompressedTrie<K, V> {
     type Output = K;
     #[inline]
     fn index(&self, i: LeafIndex) -> &Self::Output {
-        self.leaves[i].prefix()
+        &self.leaves[i].0
     }
 }
 
