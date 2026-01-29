@@ -23,6 +23,11 @@ impl<K, V> RadixTrie<K, V> {
     }
 
     #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.leaves.0.as_slice()
+    }
+
+    #[inline]
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> NonZeroUsize {
         unsafe { NonZeroUsize::new_unchecked(self.leaves.len()) }
@@ -48,13 +53,7 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
     pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> RadixTrie<K, W> {
         RadixTrie {
             branching: self.branching.clone(),
-            leaves: TrieLeaves(
-                self.leaves
-                    .0
-                    .iter()
-                    .map(|(k,v)| (*k, f(v)))
-                    .collect(),
-            ),
+            leaves: TrieLeaves(self.leaves.0.iter().map(|(k, v)| (*k, f(v))).collect()),
         }
     }
 
@@ -90,7 +89,9 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
                     return None;
                 }
                 IpPrefixCoverage::SameRange => {
-                    return self.leaves.remove_last().map(|(_,v)| v);
+                    let mut v = self.leaves.remove_last().unwrap().1;
+                    std::mem::swap(&mut v, &mut self.leaves[l].1);
+                    return Some(v);
                 }
             }
         }
@@ -144,7 +145,7 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        let (p,v) = &self.leaves[l];
+        let (p, v) = &self.leaves[l];
         (k.len() == p.len()).then_some((p, v))
     }
 
@@ -154,7 +155,7 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        let (p,v) = &mut self.leaves[l];
+        let (p, v) = &mut self.leaves[l];
         (k.len() == p.len()).then_some((&*p, v))
     }
 
@@ -234,8 +235,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        let (p,v) = &self.leaves[l];
-        (p,v)
+        let (p, v) = &self.leaves[l];
+        (p, v)
     }
 
     #[inline]
@@ -245,8 +246,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let (_, l) = self.inner_lookup(k);
-        let (p,v) = &mut self.leaves[l];
-        (&*p,v)
+        let (p, v) = &mut self.leaves[l];
+        (&*p, v)
     }
 
     pub fn info(&self) {

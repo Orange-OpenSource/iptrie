@@ -1,9 +1,9 @@
 use crate::prefix::IpPrefix;
 use std::ops::{Index, IndexMut};
-use std::{fmt, iter, vec};
+use std::{fmt, vec};
 
 #[derive(Clone)]
-pub(crate) struct TrieLeaves<K,V>(pub(crate) Vec<(K,V)>);
+pub(crate) struct TrieLeaves<K, V>(pub(crate) Vec<(K, V)>);
 
 impl<K: IpPrefix, V> TrieLeaves<K, V> {
     pub fn new(capacity: usize, k: K, v: V) -> Self {
@@ -13,21 +13,21 @@ impl<K: IpPrefix, V> TrieLeaves<K, V> {
     }
 }
 
-impl<K,V> TrieLeaves<K,V> {
+impl<K, V> TrieLeaves<K, V> {
     // returns the index of the added leaf
-    pub fn push(&mut self, leaf: (K,V)) -> LeafIndex {
+    pub fn push(&mut self, leaf: (K, V)) -> LeafIndex {
         let index = self.0.len().into();
         self.0.push(leaf);
         index
     }
 
-    pub fn remove_last(&mut self) -> Option<(K,V)> {
+    pub fn remove_last(&mut self) -> Option<(K, V)> {
         debug_assert!(self.0.len() > 1);
         self.0.pop()
     }
 
     #[allow(dead_code)]
-    pub fn remove(&mut self, i: LeafIndex) -> (K,V) {
+    pub fn remove(&mut self, i: LeafIndex) -> (K, V) {
         debug_assert!(!i.is_root_leaf());
         self.0.swap_remove(i.index())
     }
@@ -35,12 +35,10 @@ impl<K,V> TrieLeaves<K,V> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
-
-    pub fn as_slice(&self) -> &[(K,V)] { self.0.as_slice()  }
 }
 
-impl<K,V> Index<LeafIndex> for TrieLeaves<K,V> {
-    type Output = (K,V);
+impl<K, V> Index<LeafIndex> for TrieLeaves<K, V> {
+    type Output = (K, V);
 
     fn index(&self, i: LeafIndex) -> &Self::Output {
         debug_assert!(i.index() < self.0.len());
@@ -48,7 +46,7 @@ impl<K,V> Index<LeafIndex> for TrieLeaves<K,V> {
     }
 }
 
-impl<K,V> IndexMut<LeafIndex> for TrieLeaves<K,V> {
+impl<K, V> IndexMut<LeafIndex> for TrieLeaves<K, V> {
     fn index_mut(&mut self, i: LeafIndex) -> &mut Self::Output {
         debug_assert!(i.index() < self.0.len());
         unsafe { self.0.get_unchecked_mut(i.index()) }

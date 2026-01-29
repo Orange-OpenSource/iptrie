@@ -297,6 +297,11 @@ impl<K: IpPrefix, V> RTrieMap<K, V> {
         self.0.iter_mut().map(|(k, v)| (&*k, v))
     }
 
+    #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.0.as_slice()
+    }
+
     /// Gets a set of copy of all the keys in a trie set.
     #[inline]
     pub fn prefixes(&self) -> RTrieSet<K> {
@@ -511,6 +516,11 @@ impl<K: IpPrefix, V> LCTrieMap<K, V> {
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> + '_ {
         self.0.leaves.0.iter_mut().map(|(k, v)| (&*k, v))
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[(K, V)] {
+        self.0.leaves.0.as_slice()
     }
 
     /// Gets a set of copy of all the keys in a trie set.

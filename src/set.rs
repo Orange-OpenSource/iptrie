@@ -173,7 +173,7 @@ impl<P: IpPrefix> RTrieSet<P> {
     /// ```
     #[inline]
     pub fn replace(&mut self, k: P) -> Option<P> {
-        self.0.replace(k, ()).map(|(k,_)| k)
+        self.0.replace(k, ()).map(|(k, _)| k)
     }
 
     /// Gets the value associated with an exact match of the key.

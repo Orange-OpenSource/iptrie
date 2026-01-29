@@ -53,13 +53,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
     pub fn map<W, F: FnMut(&V) -> W>(&self, mut f: F) -> LevelCompressedTrie<K, W> {
         LevelCompressedTrie {
             branching: self.branching.clone(),
-            leaves: TrieLeaves(
-                self.leaves
-                    .0
-                    .iter()
-                    .map(|(k,v)| ((*k), f(v)))
-                    .collect(),
-            ),
+            leaves: TrieLeaves(self.leaves.0.iter().map(|(k, v)| ((*k), f(v))).collect()),
         }
     }
 
@@ -187,7 +181,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         Q: IpPrefix<Addr = K::Addr>,
         K: IpPrefixCovering<Q>,
     {
-        let (k,v) = &self.leaves[self.inner_lookup(k)];
+        let (k, v) = &self.leaves[self.inner_lookup(k)];
         (k, v)
     }
 
@@ -198,7 +192,7 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         K: IpPrefixCovering<Q>,
     {
         let l = self.inner_lookup(k);
-        let (k,v) = &mut self.leaves[l];
+        let (k, v) = &mut self.leaves[l];
         (&*k, v)
     }
 
