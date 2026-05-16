@@ -81,3 +81,21 @@ fn insert_after_removed_specific_leaf_keeps_branch_ordering_valid() {
     assert_eq!(trie.get(&covering_prefix), Some(&3));
     assert_eq!(trie.get(&leaf_to_remove), Some(&4));
 }
+
+#[test]
+fn replace_after_removed_specific_leaf_keeps_branch_ordering_valid() {
+    let mut trie = Ipv4RTrieSet::new();
+    let neighboring_leaf = "205.66.33.0/24".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "205.66.32.0/24".parse::<Ipv4Prefix>().unwrap();
+    let covering_prefix = "205.66.32.0/22".parse::<Ipv4Prefix>().unwrap();
+
+    trie.insert(neighboring_leaf);
+    trie.insert(leaf_to_remove);
+    assert!(trie.remove(&leaf_to_remove));
+    assert_eq!(trie.replace(covering_prefix), None);
+    assert_eq!(trie.replace(leaf_to_remove), None);
+
+    assert!(trie.contains(&neighboring_leaf));
+    assert!(trie.contains(&covering_prefix));
+    assert!(trie.contains(&leaf_to_remove));
+}
