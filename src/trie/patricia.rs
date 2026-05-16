@@ -187,19 +187,28 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
 
             // todo: some branching possibly becomes useless and should be removed here
 
-            // reindex the leaf which will be swapped with the removed one
+            // Reindex the leaf which will be swapped with the removed one.
+            //
+            // If the removed leaf is already the last leaf, `swap_remove` will not move
+            // anything into its slot. In that case there is no surviving leaf to
+            // reindex, and rewriting `lastleaf` to `l` would leave stale references to
+            // the leaf that is about to disappear.
             let lastleaf = LeafIndex::from(self.leaves.len() - 1);
-            let (mut bb, _) = self.inner_lookup(&self[lastleaf]);
-            //debug_assert_eq!( dbg!(self[lastleaf]).len(), dbg!(self[_ll]).len() );
-            if self[bb].child[0] == lastleaf {
-                self[bb].child[0] = l.into();
-            }
-            if self[bb].child[1] == lastleaf {
-                self[bb].child[1] = l.into();
-            }
-            while self[bb].escape == lastleaf {
-                self[bb].escape = l;
-                bb = self[bb].parent; // climb up the escape chain
+            if l != lastleaf {
+                let (mut bb, _) = self.inner_lookup(&self[lastleaf]);
+                //debug_assert_eq!( dbg!(self[lastleaf]).len(), dbg!(self[_ll]).len() );
+                if self[bb].child[0] == lastleaf {
+                    self[bb].child[0] = l.into();
+                }
+                if self[bb].child[1] == lastleaf {
+                    self[bb].child[1] = l.into();
+                }
+                if self[bb].escape == lastleaf {
+                    while self[self[bb].parent].escape == lastleaf {
+                        bb = self[bb].parent;
+                    }
+                    self.branching.replace_escape_leaf(bb, lastleaf, l);
+                }
             }
             // effective removal of the leaf
             Some(self.leaves.0.swap_remove(l.index()).1)
