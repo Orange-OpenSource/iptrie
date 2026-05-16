@@ -37,3 +37,26 @@ fn ipv6_tries() {
             assert!(p2.covers_equally(p3));
         });
 }
+
+#[test]
+fn remove_reindexes_moved_escape_leaf() {
+    let mut trie = Ipv4RTrieMap::new();
+    let leaf_to_keep = "80.0.0.0/4".parse::<Ipv4Prefix>().unwrap();
+    let unrelated_leaf = "128.0.0.0/3".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "96.0.0.0/4".parse::<Ipv4Prefix>().unwrap();
+    let moved_escape_leaf = "0.0.0.0/1".parse::<Ipv4Prefix>().unwrap();
+
+    // The insertion order is important: removing `leaf_to_remove` moves the final
+    // leaf into its slot. That final leaf is also inherited as an escape leaf by a
+    // descendant branch, so all propagated escape references must be reindexed.
+    trie.insert(leaf_to_keep, 1);
+    trie.insert(unrelated_leaf, 2);
+    trie.insert(leaf_to_remove, 3);
+    trie.insert(moved_escape_leaf, 4);
+
+    assert_eq!(trie.remove(&leaf_to_remove), Some(3));
+    assert_eq!(trie.get(&leaf_to_remove), None);
+    assert_eq!(trie.get(&leaf_to_keep), Some(&1));
+    assert_eq!(trie.get(&unrelated_leaf), Some(&2));
+    assert_eq!(trie.get(&moved_escape_leaf), Some(&4));
+}
