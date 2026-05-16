@@ -60,3 +60,24 @@ fn remove_reindexes_moved_escape_leaf() {
     assert_eq!(trie.get(&unrelated_leaf), Some(&2));
     assert_eq!(trie.get(&moved_escape_leaf), Some(&4));
 }
+
+#[test]
+fn insert_after_removed_specific_leaf_keeps_branch_ordering_valid() {
+    let mut trie = Ipv4RTrieMap::new();
+    let neighboring_leaf = "205.66.33.0/24".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "205.66.32.0/24".parse::<Ipv4Prefix>().unwrap();
+    let covering_prefix = "205.66.32.0/22".parse::<Ipv4Prefix>().unwrap();
+
+    // This sequence was minimized from the prefix-trie RIS mutation benchmark.
+    // Removing the /24 leaves behind branching state that must still support
+    // inserting a covering prefix and then the same /24 again.
+    trie.insert(neighboring_leaf, 1);
+    trie.insert(leaf_to_remove, 2);
+    assert_eq!(trie.remove(&leaf_to_remove), Some(2));
+    trie.insert(covering_prefix, 3);
+    trie.insert(leaf_to_remove, 4);
+
+    assert_eq!(trie.get(&neighboring_leaf), Some(&1));
+    assert_eq!(trie.get(&covering_prefix), Some(&3));
+    assert_eq!(trie.get(&leaf_to_remove), Some(&4));
+}
