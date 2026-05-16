@@ -63,6 +63,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
 
         let (deepestbranching, deepestleaf) =
             self.branching.search_deepest_candidate(&addedpfx.bitslot());
+        let deepeststructuralleaf =
+            self.structural_leaf_for_insert(deepestbranching, deepestleaf);
         let mut l = deepestleaf;
         let mut b = deepestbranching;
         if l != self[b].escape && !self[l].covers(&addedpfx) {
@@ -82,9 +84,9 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
                         &addedpfx.bitslot(),
                         addedpfx.len(),
                         deepestbranching,
-                        deepestleaf,
-                        &self[deepestleaf].bitslot(),
-                        self[deepestleaf].len(),
+                        deepeststructuralleaf,
+                        &self[deepeststructuralleaf].bitslot(),
+                        self[deepeststructuralleaf].len(),
                     );
                     return None;
                 }
@@ -103,6 +105,8 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
 
         let (deepestbranching, deepestleaf) =
             self.branching.search_deepest_candidate(&addedpfx.bitslot());
+        let deepeststructuralleaf =
+            self.structural_leaf_for_insert(deepestbranching, deepestleaf);
         let mut l = deepestleaf;
         let mut b = deepestbranching;
         if l != self[b].escape && !self[l].covers(&addedpfx) {
@@ -122,9 +126,9 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
                         &addedpfx.bitslot(),
                         addedpfx.len(),
                         deepestbranching,
-                        deepestleaf,
-                        &self[deepestleaf].bitslot(),
-                        self[deepestleaf].len(),
+                        deepeststructuralleaf,
+                        &self[deepeststructuralleaf].bitslot(),
+                        self[deepeststructuralleaf].len(),
                     );
                     return None;
                 }
@@ -139,6 +143,19 @@ impl<K: IpPrefix, V> RadixTrie<K, V> {
 }
 
 impl<K: IpPrefix, V> RadixTrie<K, V> {
+    #[inline]
+    fn structural_leaf_for_insert(
+        &self,
+        deepestbranching: BranchingIndex,
+        deepestleaf: LeafIndex,
+    ) -> LeafIndex {
+        if deepestleaf == self[deepestbranching].escape {
+            self.branching.search_one_matching_leaf(deepestbranching)
+        } else {
+            deepestleaf
+        }
+    }
+
     pub fn get<Q>(&self, k: &Q) -> Option<(&K, &V)>
     where
         Q: IpPrefix<Addr = K::Addr>,
@@ -445,7 +462,6 @@ impl BranchingTree {
         }
     }
 
-    #[allow(dead_code)]
     pub fn search_one_matching_leaf(&self, mut b: BranchingIndex) -> LeafIndex {
         loop {
             let bb = &self[b];
