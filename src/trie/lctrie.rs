@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, slice};
 use std::mem::size_of;
 use std::num::NonZeroUsize;
 use std::ops::{Index, IndexMut};
@@ -279,6 +279,24 @@ impl<K: IpPrefix, V> LevelCompressedTrie<K, V> {
         );
 
         println!();
+    }
+}
+
+impl<'a,K, V> IntoIterator for &'a LevelCompressedTrie<K, V> {
+    type Item = &'a (K, V);
+    type IntoIter = slice::Iter<'a, (K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.leaves).into_iter()
+    }
+}
+
+impl<'a,K, V> IntoIterator for &'a mut LevelCompressedTrie<K, V> {
+    type Item = &'a mut (K, V);
+    type IntoIter = slice::IterMut<'a, (K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.leaves).into_iter()
     }
 }
 

@@ -9,6 +9,8 @@ use crate::graphviz::DotWriter;
 
 #[cfg(feature = "graphviz")]
 use std::fmt::Display;
+use std::iter::Map;
+use std::slice;
 
 /// A set of Ip prefixes based on a radix binary trie
 #[derive(Clone)]
@@ -278,6 +280,16 @@ impl<P: IpRootPrefix> FromIterator<P> for RTrieSet<P> {
     }
 }
 
+
+impl<'a, P:IpRootPrefix> IntoIterator for &'a RTrieSet<P> {
+    type Item = &'a P;
+    type IntoIter = Map<slice::Iter<'a, (P, ())>, fn(&'a (P,()))->&'a P>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.0).into_iter().map(|(k, _)| k)
+    }
+}
+
 impl<P: IpPrefix> LCTrieSet<P> {
     /// Returns the size of the set.
     ///
@@ -404,6 +416,15 @@ impl<P: IpPrefix> LCTrieSet<P> {
 impl<P: IpRootPrefix> FromIterator<P> for LCTrieSet<P> {
     fn from_iter<I: IntoIterator<Item = P>>(iter: I) -> Self {
         RTrieSet::from_iter(iter).compress()
+    }
+}
+
+impl<'a, P:IpRootPrefix> IntoIterator for &'a LCTrieSet<P> {
+    type Item = &'a P;
+    type IntoIter = Map<slice::Iter<'a, (P, ())>, fn(&'a (P,()))->&'a P>;
+
+    fn into_iter(self) -> Self::IntoIter {
+         (&self.0).into_iter().map(|(k, _)| k)
     }
 }
 

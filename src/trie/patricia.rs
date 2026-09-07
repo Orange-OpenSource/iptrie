@@ -4,6 +4,7 @@ use crate::prefix::*;
 use std::io;
 use std::num::NonZeroUsize;
 use std::ops::{Index, IndexMut};
+use std::slice;
 
 #[derive(Clone)]
 pub(crate) struct RadixTrie<K, V> {
@@ -39,6 +40,26 @@ impl<K, V> RadixTrie<K, V> {
         self.branching.0.shrink_to_fit();
     }
 }
+
+
+impl<'a,K, V> IntoIterator for &'a RadixTrie<K, V> {
+    type Item = &'a (K, V);
+    type IntoIter = slice::Iter<'a, (K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.leaves).into_iter()
+    }
+}
+
+impl<'a,K, V> IntoIterator for &'a mut RadixTrie<K, V> {
+    type Item = &'a mut (K, V);
+    type IntoIter = slice::IterMut<'a, (K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.leaves).into_iter()
+    }
+}
+
 
 impl<K: IpRootPrefix, V> RadixTrie<K, V> {
     pub(crate) fn new(value: V, capacity: usize) -> Self {

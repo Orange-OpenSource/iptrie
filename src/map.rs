@@ -11,6 +11,8 @@ use crate::graphviz::DotWriter;
 
 #[cfg(feature = "graphviz")]
 use std::fmt::Display;
+use std::iter::Map;
+use std::slice;
 
 /// A map of Ip prefixes based on a radix binary trie
 #[derive(Clone)]
@@ -325,6 +327,28 @@ impl<K: IpRootPrefix, V: Default> FromIterator<(K, V)> for RTrieMap<K, V> {
     }
 }
 
+
+impl<'a, K: IpRootPrefix, V: Default> IntoIterator for &'a RTrieMap<K, V> {
+
+    type Item = (&'a K, &'a V);
+    type IntoIter = Map<slice::Iter<'a, (K, V)>, fn(&'a (K,V))->(&'a K, &'a V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.0).into_iter().map(|(k, v)| (k, v))
+    }
+}
+
+
+impl<'a, K: IpRootPrefix, V: Default> IntoIterator for &'a mut RTrieMap<K, V> {
+
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = Map<slice::IterMut<'a, (K, V)>, fn(&'a mut (K,V))->(&'a K, &'a mut V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.0).into_iter().map(|(k, v)| (k, v))
+    }
+}
+
 impl<K: IpPrefix, V> LCTrieMap<K, V> {
     /// Returns the size of the map.
     ///
@@ -537,6 +561,28 @@ impl<K: IpPrefix, V> LCTrieMap<K, V> {
         LCTrieSet(self.0.map(|_| ()))
     }
 }
+
+
+impl<'a, K: IpRootPrefix, V: Default> IntoIterator for &'a LCTrieMap<K, V> {
+
+    type Item = (&'a K, &'a V);
+    type IntoIter = Map<slice::Iter<'a, (K, V)>, fn(&'a (K,V))->(&'a K, &'a V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.0).into_iter().map(|(k, v)| (k, v))
+    }
+}
+
+impl<'a, K: IpRootPrefix, V: Default> IntoIterator for &'a mut LCTrieMap<K, V> {
+
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = Map<slice::IterMut<'a, (K, V)>, fn(&'a mut (K,V))->(&'a K, &'a mut V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.0).into_iter().map(|(k, v)| (k, v))
+    }
+}
+
 
 impl<K: IpRootPrefix, V: Default> FromIterator<(K, V)> for LCTrieMap<K, V> {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {

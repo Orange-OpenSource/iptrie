@@ -1,6 +1,6 @@
 use crate::prefix::IpPrefix;
 use std::ops::{Index, IndexMut};
-use std::{fmt, vec};
+use std::{fmt, slice, vec};
 
 #[derive(Clone)]
 pub(crate) struct TrieLeaves<K, V>(pub(crate) Vec<(K, V)>);
@@ -60,6 +60,26 @@ impl<K, V> IntoIterator for TrieLeaves<K, V> {
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a TrieLeaves<K, V> {
+    type Item = &'a (K, V);
+    type IntoIter = slice::Iter<'a, (K, V)>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a mut TrieLeaves<K, V> {
+    type Item = &'a mut (K, V);
+    type IntoIter = slice::IterMut<'a, (K, V)>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut()
     }
 }
 
