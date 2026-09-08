@@ -37,3 +37,65 @@ fn ipv6_tries() {
             assert!(p2.covers_equally(p3));
         });
 }
+
+#[test]
+fn remove_reindexes_moved_escape_leaf() {
+    let mut trie = Ipv4RTrieMap::new();
+    let leaf_to_keep = "80.0.0.0/4".parse::<Ipv4Prefix>().unwrap();
+    let unrelated_leaf = "128.0.0.0/3".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "96.0.0.0/4".parse::<Ipv4Prefix>().unwrap();
+    let moved_escape_leaf = "0.0.0.0/1".parse::<Ipv4Prefix>().unwrap();
+
+    // The insertion order is important: removing `leaf_to_remove` moves the final
+    // leaf into its slot. That final leaf is also inherited as an escape leaf by a
+    // descendant branch, so all propagated escape references must be reindexed.
+    trie.insert(leaf_to_keep, 1);
+    trie.insert(unrelated_leaf, 2);
+    trie.insert(leaf_to_remove, 3);
+    trie.insert(moved_escape_leaf, 4);
+
+    assert_eq!(trie.remove(&leaf_to_remove), Some(3));
+    assert_eq!(trie.get(&leaf_to_remove), None);
+    assert_eq!(trie.get(&leaf_to_keep), Some(&1));
+    assert_eq!(trie.get(&unrelated_leaf), Some(&2));
+    assert_eq!(trie.get(&moved_escape_leaf), Some(&4));
+}
+
+#[test]
+fn insert_after_removed_specific_leaf_keeps_branch_ordering_valid() {
+    let mut trie = Ipv4RTrieMap::new();
+    let neighboring_leaf = "205.66.33.0/24".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "205.66.32.0/24".parse::<Ipv4Prefix>().unwrap();
+    let covering_prefix = "205.66.32.0/22".parse::<Ipv4Prefix>().unwrap();
+
+    // This sequence was minimized from the prefix-trie RIS mutation benchmark.
+    // Removing the /24 leaves behind branching state that must still support
+    // inserting a covering prefix and then the same /24 again.
+    trie.insert(neighboring_leaf, 1);
+    trie.insert(leaf_to_remove, 2);
+    assert_eq!(trie.remove(&leaf_to_remove), Some(2));
+    trie.insert(covering_prefix, 3);
+    trie.insert(leaf_to_remove, 4);
+
+    assert_eq!(trie.get(&neighboring_leaf), Some(&1));
+    assert_eq!(trie.get(&covering_prefix), Some(&3));
+    assert_eq!(trie.get(&leaf_to_remove), Some(&4));
+}
+
+#[test]
+fn replace_after_removed_specific_leaf_keeps_branch_ordering_valid() {
+    let mut trie = Ipv4RTrieSet::new();
+    let neighboring_leaf = "205.66.33.0/24".parse::<Ipv4Prefix>().unwrap();
+    let leaf_to_remove = "205.66.32.0/24".parse::<Ipv4Prefix>().unwrap();
+    let covering_prefix = "205.66.32.0/22".parse::<Ipv4Prefix>().unwrap();
+
+    trie.insert(neighboring_leaf);
+    trie.insert(leaf_to_remove);
+    assert!(trie.remove(&leaf_to_remove));
+    assert_eq!(trie.replace(covering_prefix), None);
+    assert_eq!(trie.replace(leaf_to_remove), None);
+
+    assert!(trie.contains(&neighboring_leaf));
+    assert!(trie.contains(&covering_prefix));
+    assert!(trie.contains(&leaf_to_remove));
+}
